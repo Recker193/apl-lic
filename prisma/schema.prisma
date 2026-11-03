@@ -1,0 +1,414 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum MembershipRole {
+  TEACHER
+  STUDENT
+}
+
+enum ContentStatus {
+  PUBLISHED
+  ARCHIVED
+  CANCELLED
+}
+
+enum AssignmentProgressStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum EmailTokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum MaterialKind {
+  FILE
+  LINK
+}
+
+enum NotificationType {
+  ASSIGNMENT_CREATED
+  ASSIGNMENT_UPDATED
+  ASSIGNMENT_DUE_SOON
+  EXAM_CREATED
+  EXAM_UPDATED
+  MATERIAL_CREATED
+  ANNOUNCEMENT_CREATED
+  SCHOOL_EVENT_CREATED
+}
+
+model School {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  classes       SchoolClass[]
+  subjects      Subject[]
+  groups        SubjectGroup[]
+  events        SchoolEvent[]
+  invitations   Invitation[]
+  announcements Announcement[]
+  assignments   Assignment[]
+  exams         Exam[]
+  materials     Material[]
+  auditLogs     AuditLog[]
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  role            UserRole
+  schoolId        String
+  isActive        Boolean   @default(true)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  school             School                @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  sessions           Session[]
+  classMemberships   ClassMembership[]
+  taughtGroups       SubjectGroup[]        @relation("GroupTeacher")
+  groupMemberships   GroupMembership[]
+  announcements      Announcement[]
+  assignments        Assignment[]
+  assignmentProgress AssignmentProgress[]
+  exams              Exam[]
+  materials          Material[]
+  events             SchoolEvent[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  invitationsCreated Invitation[]          @relation("InvitationCreator")
+  emailTokens        EmailToken[]
+  loginAttempts      LoginAttempt[]
+
+  @@index([schoolId])
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Invitation {
+  id          String           @id @default(uuid())
+  email       String
+  role        UserRole
+  schoolId    String
+  classId     String?
+  groupId     String?
+  tokenHash   String           @unique
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  createdById String
+  createdAt   DateTime         @default(now())
+
+  school    School        @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  createdBy User          @relation("InvitationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  class     SchoolClass?  @relation(fields: [classId], references: [id], onDelete: SetNull)
+  group     SubjectGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([schoolId])
+}
+
+model EmailToken {
+  id        String         @id @default(uuid())
+  userId    String
+  type      EmailTokenType
+  tokenHash String         @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  email     String
+  ipAddress String
+  success   Boolean
+  createdAt DateTime @default(now())
+  userId    String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+}
+
+model SchoolClass {
+  id         String   @id @default(uuid())
+  name       String
+  schoolId   String
+  schoolYear String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  school       School             @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  memberships  ClassMembership[]
+  groups       SubjectGroup[]
+  invitations  Invitation[]
+
+  @@unique([schoolId, name, schoolYear])
+  @@index([schoolId])
+}
+
+model ClassMembership {
+  id        String   @id @default(uuid())
+  studentId String
+  classId   String
+  joinedAt  DateTime @default(now())
+
+  student User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, classId])
+}
+
+model Subject {
+  id        String   @id @default(uuid())
+  name      String
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school School         @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  groups SubjectGroup[]
+
+  @@unique([schoolId, name])
+}
+
+model SubjectGroup {
+  id        String   @id @default(uuid())
+  subjectId String
+  classId   String
+  teacherId String
+  schoolId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subject        Subject           @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  class          SchoolClass       @relation(fields: [classId], references: [id], onDelete: Restrict)
+  teacher        User              @relation("GroupTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
+  school         School            @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  memberships    GroupMembership[]
+  announcements  Announcement[]
+  assignments    Assignment[]
+  exams          Exam[]
+  materials      Material[]
+  invitations    Invitation[]
+
+  @@unique([subjectId, classId])
+  @@index([schoolId])
+  @@index([teacherId])
+}
+
+model GroupMembership {
+  id             String          @id @default(uuid())
+  groupId        String
+  userId         String
+  membershipRole MembershipRole
+  canPost        Boolean         @default(false)
+  joinedAt       DateTime        @default(now())
+
+  group SubjectGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model Announcement {
+  id        String        @id @default(uuid())
+  groupId   String
+  schoolId  String
+  authorId  String
+  title     String
+  content   String
+  isPinned  Boolean       @default(false)
+  status    ContentStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  group  SubjectGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  school School       @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, createdAt])
+  @@index([schoolId])
+}
+
+model Assignment {
+  id            String        @id @default(uuid())
+  groupId       String
+  schoolId      String
+  authorId      String
+  title         String
+  description   String
+  instructions  String?
+  dueAt         DateTime
+  status        ContentStatus @default(PUBLISHED)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  group    SubjectGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  author   User                 @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  school   School               @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  progress AssignmentProgress[]
+
+  @@index([groupId, dueAt])
+  @@index([schoolId])
+}
+
+model AssignmentProgress {
+  id           String                    @id @default(uuid())
+  assignmentId String
+  studentId    String
+  status       AssignmentProgressStatus  @default(TODO)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+}
+
+model Exam {
+  id          String        @id @default(uuid())
+  groupId     String
+  schoolId    String
+  authorId    String
+  title       String
+  description String
+  topic       String?
+  scheduledAt DateTime
+  status      ContentStatus @default(PUBLISHED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  group  SubjectGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  school School       @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, scheduledAt])
+  @@index([schoolId])
+}
+
+model Material {
+  id          String       @id @default(uuid())
+  groupId     String
+  schoolId    String
+  authorId    String
+  title       String
+  description String?
+  kind        MaterialKind
+  fileKey     String?
+  mimeType    String?
+  sizeBytes   Int?
+  url         String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  group  SubjectGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  school School       @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+
+  @@index([groupId])
+  @@index([schoolId])
+}
+
+model SchoolEvent {
+  id          String   @id @default(uuid())
+  schoolId    String
+  authorId    String
+  title       String
+  description String
+  startsAt    DateTime
+  endsAt      DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([schoolId, startsAt])
+}
+
+model Notification {
+  id           String           @id @default(uuid())
+  userId       String
+  type         NotificationType
+  title        String
+  message      String
+  resourceType String
+  resourceId   String
+  dedupeKey    String
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  readAt       DateTime?
+  createdAt    DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String
+  schoolId     String
+  action       String
+  resourceType String
+  resourceId   String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  actor  User   @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+
+  @@index([schoolId, createdAt])
+  @@index([actorId])
+}

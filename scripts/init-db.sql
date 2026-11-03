@@ -1,0 +1,1 @@
+CREATE DATABASE hssa_test;
