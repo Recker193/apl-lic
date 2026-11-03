@@ -1,0 +1,115 @@
+# Producție / pilot. Pornire:
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hssa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: hssa
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hssa -d hssa"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://hssa:${POSTGRES_PASSWORD}@postgres:5432/hssa
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET}
+      COOKIE_SECURE: "true"
+      COOKIE_NAME: ${COOKIE_NAME:-hssa.sid}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+      CORS_ORIGINS: https://${DOMAIN:?set DOMAIN}
+      APP_BASE_URL: https://${DOMAIN}
+      TRUST_PROXY: "1"
+      ENABLE_SWAGGER: "false"
+      ENABLE_CRON: "true"
+      STORAGE_DIR: /data/uploads
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-10485760}
+      MAIL_HOST: ${MAIL_HOST:?set MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_FROM: ${MAIL_FROM:?set MAIL_FROM}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_SCHOOL_NAME: ${BOOTSTRAP_SCHOOL_NAME:-}
+    volumes:
+      - uploads:/data/uploads
+    networks: [internal]
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: hssa
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: hssa
+      BACKUP_DIR: /backups
+      UPLOADS_DIR: /uploads
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_ENCRYPTION_PASSPHRASE: ${BACKUP_ENCRYPTION_PASSPHRASE:-}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache openssl >/dev/null
+        while true; do
+          /scripts/backup-db.sh || echo "backup failed" >&2
+          sleep "$${BACKUP_INTERVAL_SECONDS}"
+        done
+    volumes:
+      - ./scripts:/scripts:ro
+      - backups:/backups
+      - uploads:/uploads:ro
+    networks: [internal]
+
+volumes:
+  pgdata:
+  uploads:
+  backups:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:

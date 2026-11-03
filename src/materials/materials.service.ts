@@ -99,7 +99,12 @@ export class MaterialsService {
       throw new NotFoundException();
     }
     const buffer = await this.storage.read(item.fileKey);
-    return { buffer, mimeType: item.mimeType ?? 'application/octet-stream', title: item.title };
+    return {
+      buffer,
+      mimeType: item.mimeType ?? 'application/octet-stream',
+      title: item.title,
+      fileKey: item.fileKey,
+    };
   }
 
   async remove(user: AuthenticatedUser, id: string) {

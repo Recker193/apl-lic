@@ -1,0 +1,43 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# DOMAIN: numele public (ex. hssa.liceu.ro). Caddy obține și reînnoiește
+# automat certificatul Let's Encrypt. Pentru test local: DOMAIN=localhost.
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Metricile nu sunt publice; monitorizarea le citește din rețeaua internă
+	# (http://backend:3000/api/v1/health/metrics). Blocul handle trebuie să
+	# precedeze "handle /api/*" (handle-urile se evaluează în ordine).
+	@metrics path /api/v1/health/metrics
+	handle @metrics {
+		respond 404
+	}
+
+	# Limita de 10 MB pe fișier este impusă de NestJS; 11 MB acoperă
+	# overhead-ul multipart. Orice altceva peste limită este respins aici.
+	request_body {
+		max_size 11MB
+	}
+
+	handle /api/* {
+		reverse_proxy backend:3000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

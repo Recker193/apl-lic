@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AccessModule } from './common/access/access.module';
 import { AuthGuard } from './common/guards/auth.guard';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { buildLoggerParams } from './common/logging/logger.config';
+import { UserThrottlerGuard } from './common/http/user-throttler.guard';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { AuditModule } from './audit/audit.module';
@@ -28,6 +31,7 @@ import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
+    LoggerModule.forRoot(buildLoggerParams()),
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60000, limit: 120 }],
     }),
@@ -57,7 +61,7 @@ import { UsersModule } from './users/users.module';
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: CsrfGuard },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
   ],
 })
 export class AppModule {}

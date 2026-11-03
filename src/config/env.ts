@@ -14,6 +14,8 @@ export type AppEnv = {
   mailFrom: string;
   appBaseUrl: string;
   enableCron: boolean;
+  trustProxy: boolean | number;
+  enableSwagger: boolean;
 };
 
 function required(name: string): string {
@@ -24,15 +26,31 @@ function required(name: string): string {
   return value;
 }
 
+function parseTrustProxy(value: string | undefined): boolean | number {
+  if (!value || value === 'false') return false;
+  if (value === 'true') return true;
+  const hops = Number(value);
+  return Number.isInteger(hops) && hops >= 0 ? hops : false;
+}
+
 export function loadEnv(): AppEnv {
   const cors = process.env.CORS_ORIGINS ?? 'http://localhost:3000';
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
+  const cookieSecure = process.env.COOKIE_SECURE === 'true';
+  const cookieName = process.env.COOKIE_NAME ?? 'hssa.sid';
+  if (nodeEnv === 'production' && !cookieSecure) {
+    throw new Error('COOKIE_SECURE=true is required when NODE_ENV=production');
+  }
+  if (cookieName.startsWith('__Host-') && !cookieSecure) {
+    throw new Error('A __Host- cookie name requires COOKIE_SECURE=true');
+  }
   return {
-    nodeEnv: process.env.NODE_ENV ?? 'development',
+    nodeEnv,
     port: Number(process.env.PORT ?? 3000),
     databaseUrl: required('DATABASE_URL'),
     sessionSecret: required('SESSION_SECRET'),
-    cookieSecure: process.env.COOKIE_SECURE === 'true',
-    cookieName: process.env.COOKIE_NAME ?? 'hssa.sid',
+    cookieSecure,
+    cookieName,
     sessionTtlHours: Number(process.env.SESSION_TTL_HOURS ?? 12),
     corsOrigins: cors
       .split(',')
@@ -45,5 +63,8 @@ export function loadEnv(): AppEnv {
     mailFrom: process.env.MAIL_FROM ?? 'noreply@localhost',
     appBaseUrl: process.env.APP_BASE_URL ?? 'http://localhost:3000',
     enableCron: process.env.ENABLE_CRON === 'true',
+    trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
+    enableSwagger:
+      nodeEnv !== 'production' || process.env.ENABLE_SWAGGER === 'true',
   };
 }

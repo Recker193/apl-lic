@@ -629,7 +629,7 @@ export const GroupDetail: React.FC = () => {
                   </p>
                 </div>
                 <a
-                  href={`/api/v1/materials/${m.id}/download`}
+                  href={`/api/v1/materials/${m.id}/file`}
                   className="btn btn-outline"
                   target="_blank"
                   rel="noreferrer"

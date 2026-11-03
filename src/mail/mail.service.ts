@@ -24,7 +24,11 @@ export class MailService {
       const transporter = nodemailer.createTransport({
         host: env.mailHost,
         port: env.mailPort,
-        secure: false,
+        secure: env.mailPort === 465,
+        auth:
+          process.env.MAIL_USER && process.env.MAIL_PASSWORD
+            ? { user: process.env.MAIL_USER, pass: process.env.MAIL_PASSWORD }
+            : undefined,
       });
       await transporter.sendMail({
         from: env.mailFrom,

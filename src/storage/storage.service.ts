@@ -16,10 +16,11 @@ const MIME_TO_EXT: Record<string, string> = {
     'docx',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation':
     'pptx',
+  'application/zip': 'zip',
 };
 
 const FILE_KEY_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|png|jpg|txt|docx|pptx)$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(pdf|png|jpg|txt|docx|pptx|zip)$/i;
 
 @Injectable()
 export class StorageService {
@@ -40,7 +41,11 @@ export class StorageService {
     mkdirSync(env.storageDir, { recursive: true });
     const fileKey = `${randomUUID()}.${ext}`;
     const path = join(env.storageDir, fileKey);
-    await pipeline(Readable.from(buffer), createWriteStream(path));
+    // 0o640: fără drepturi de execuție pentru fișierele încărcate.
+    await pipeline(
+      Readable.from(buffer),
+      createWriteStream(path, { mode: 0o640 }),
+    );
     return fileKey;
   }
 

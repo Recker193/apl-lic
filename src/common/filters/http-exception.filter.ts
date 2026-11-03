@@ -27,7 +27,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return;
     }
 
-    this.logger.error('Unhandled error');
+    const error = exception as { name?: string; code?: string; stack?: string };
+    // Doar tipul, codul și cadrele de stivă: mesajele pot conține date sensibile.
+    const frames = (error?.stack ?? '')
+      .split('\n')
+      .filter((line) => line.trim().startsWith('at '))
+      .slice(0, 8)
+      .join('\n');
+    this.logger.error(
+      `Unhandled error ${error?.name ?? 'Unknown'}${error?.code ? ` (${error.code})` : ''}\n${frames}`,
+    );
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',

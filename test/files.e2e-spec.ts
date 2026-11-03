@@ -43,6 +43,41 @@ describe('Files (e2e)', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects an executable renamed to .pdf (magic bytes mismatch)', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/api/v1/groups/${fixture.groupA.id}/materials`)
+      .set('Cookie', teacherCookie)
+      .set('X-Requested-With', 'XMLHttpRequest')
+      .field('title', 'Disguised')
+      .attach('file', Buffer.from('MZ\x90\x00\x03\x00'), {
+        filename: 'notes.pdf',
+        contentType: 'application/pdf',
+      });
+    expect(res.status).toBe(400);
+  });
+
+  it('serves downloads as attachments with nosniff', async () => {
+    const created = await request(app.getHttpServer())
+      .post(`/api/v1/groups/${fixture.groupA.id}/materials`)
+      .set('Cookie', teacherCookie)
+      .set('X-Requested-With', 'XMLHttpRequest')
+      .field('title', 'Headers')
+      .attach('file', Buffer.from('%PDF-1.4 headers'), {
+        filename: 'headers.pdf',
+        contentType: 'application/pdf',
+      });
+    expect(created.status).toBe(201);
+    const res = await authed(
+      app,
+      teacherCookie,
+      'get',
+      `/api/v1/materials/${created.body.id as string}/file`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toMatch(/^attachment/);
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+  });
+
   it('rejects a file that is too large', async () => {
     const big = Buffer.alloc(11 * 1024 * 1024, 1);
     const res = await request(app.getHttpServer())

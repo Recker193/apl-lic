@@ -1,0 +1,14 @@
+.git
+.cursor
+.env
+.env.*
+!.env.example
+!.env.prod.example
+node_modules
+web/node_modules
+dist
+web/dist
+storage
+coverage
+docs
+*.log
