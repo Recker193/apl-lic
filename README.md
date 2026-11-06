@@ -44,3 +44,33 @@ End-to-end tests use the `hssa_test` database defined in `.env.test` (created by
 ## Auth
 
 Invite-only registration, Argon2id passwords, HttpOnly session cookies, CSRF header `X-Requested-With: XMLHttpRequest` on authenticated mutations, and school-scoped authorization on every resource.
+
+## Production / pilot
+
+Containerised deployment (Postgres, NestJS, Caddy with automatic HTTPS, scheduled backups):
+
+```bash
+cp .env.prod.example .env.prod   # fill in every value
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+```
+
+Full installation, backup/restore and emergency procedures are in [docs/PILOT_RUNBOOK.md](docs/PILOT_RUNBOOK.md).
+
+Production-related variables (see `.env.example` and `.env.prod.example`):
+
+- `TRUST_PROXY` – number of trusted proxies (1 behind Caddy) so rate limiting sees the real client IP.
+- `ENABLE_SWAGGER` – Swagger is off when `NODE_ENV=production` unless set to `true`.
+- `COOKIE_SECURE=true` is mandatory when `NODE_ENV=production`.
+- `LOG_LEVEL` – pino JSON log level.
+- `MAIL_USER` / `MAIL_PASSWORD` – optional SMTP authentication.
+
+Health endpoints: `/api/v1/health/liveness`, `/api/v1/health/readiness`, `/api/v1/health/metrics` (Prometheus text; blocked by the reverse proxy).
+
+## Browser tests (Playwright)
+
+```bash
+cd web && npm run test:e2e:install   # one-time: downloads Chromium
+cd .. && npm run test:e2e:ui
+```
+
+Needs PostgreSQL on port 5433 with the `hssa_test` database (`docker compose up -d postgres`). The run resets and seeds `hssa_test`, starts the backend on port 3100 and Vite on 5174, then exercises the auth, teacher, student and admin flows.

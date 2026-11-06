@@ -35,8 +35,13 @@ export async function openFirstGroup(page: Page) {
 }
 
 /** Alerturile aplicației nu trebuie să blocheze testul; le acceptăm și le colectăm. */
+const collected = new WeakMap<Page, string[]>()
+
 export function collectDialogs(page: Page): string[] {
+  const existing = collected.get(page)
+  if (existing) return existing
   const messages: string[] = []
+  collected.set(page, messages)
   page.on('dialog', (dialog) => {
     messages.push(dialog.message())
     void dialog.accept()

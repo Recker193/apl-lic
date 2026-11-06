@@ -24,10 +24,17 @@ export class AssignmentsService {
 
   async list(user: AuthenticatedUser, groupId: string) {
     await this.access.getGroupAccess(user, groupId);
-    return this.prisma.assignment.findMany({
+    const items = await this.prisma.assignment.findMany({
       where: { groupId, schoolId: user.schoolId, status: ContentStatus.PUBLISHED },
       orderBy: { dueAt: 'asc' },
+      include: { progress: { where: { studentId: user.id } } },
     });
+    // Elevul primește doar propriul progres, ca obiect (nu listă).
+    return items.map(({ progress, ...rest }) =>
+      user.role === 'STUDENT'
+        ? { ...rest, progress: progress[0] ?? null }
+        : rest,
+    );
   }
 
   async get(user: AuthenticatedUser, id: string) {

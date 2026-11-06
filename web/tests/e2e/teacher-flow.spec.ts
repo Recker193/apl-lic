@@ -19,7 +19,7 @@ test.describe('profesor', () => {
 
   test('publică o temă', async ({ page }) => {
     await page.getByRole('button', { name: /Teme \(/ }).click()
-    await page.getByRole('button', { name: /^\s*Adaugă/ }).first().click()
+    await page.getByRole('button', { name: 'Temă nouă' }).click()
     await page.getByPlaceholder('Titlu temă').fill('Tema E2E')
     await page.getByPlaceholder('Cerințe și instrucțiuni...').fill('Rezolvați exercițiile 1-5')
     await page.locator('input[type="datetime-local"]').fill(nextWeek())
@@ -29,7 +29,7 @@ test.describe('profesor', () => {
 
   test('programează un test', async ({ page }) => {
     await page.getByRole('button', { name: /Teste \/ Examene/ }).click()
-    await page.getByRole('button', { name: /^\s*(Adaugă|Programează|Test)/ }).first().click()
+    await page.getByRole('button', { name: 'Programează test' }).click()
     await page.getByPlaceholder('Denumire test (ex: Teză semestrială)').fill('Test E2E')
     await page.getByPlaceholder('Materie evaluată sau instrucțiuni...').fill('Capitolul 1')
     await page.locator('input[type="datetime-local"]').fill(nextWeek())
@@ -39,7 +39,7 @@ test.describe('profesor', () => {
 
   test('încarcă un PDF care se descarcă ca atașament', async ({ page }) => {
     await page.getByRole('button', { name: /Materiale \(/ }).click()
-    await page.getByRole('button', { name: /^\s*(Adaugă|Încarcă)/ }).first().click()
+    await page.getByRole('button', { name: 'Încarcă material' }).click()
     await page.getByPlaceholder('Titlu material (ex: Sinteză Capitol 1)').fill('Material E2E')
     await page.locator('input[type="file"]').setInputFiles({
       name: 'suport.pdf',
@@ -59,7 +59,7 @@ test.describe('profesor', () => {
   test('respinge un executabil redenumit .pdf', async ({ page }) => {
     const dialogs = collectDialogs(page)
     await page.getByRole('button', { name: /Materiale \(/ }).click()
-    await page.getByRole('button', { name: /^\s*(Adaugă|Încarcă)/ }).first().click()
+    await page.getByRole('button', { name: 'Încarcă material' }).click()
     await page.getByPlaceholder('Titlu material (ex: Sinteză Capitol 1)').fill('Fals')
     await page.locator('input[type="file"]').setInputFiles({
       name: 'fals.pdf',

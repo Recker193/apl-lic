@@ -51,8 +51,12 @@ test.describe('autentificare', () => {
     await guest.locator('form button[type="submit"]').click()
     await expect(guest.getByText(/Contul a fost creat/)).toBeVisible()
 
+    // Conectarea cere e-mail verificat; tokenul de verificare ajunge doar prin
+    // e-mail, deci contul nou nu se poate conecta încă.
     await guest.waitForURL(/\/login/)
-    await loginAs(guest, email)
+    await login(guest, email)
+    await expect(guest).toHaveURL(/\/login/)
+    await expect(guest.getByRole('button', { name: /Deconectare/ })).toHaveCount(0)
     await context.close()
   })
 })

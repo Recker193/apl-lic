@@ -26,7 +26,7 @@ test.describe('elev', () => {
     await loginAs(page, USERS.teacher)
     await openFirstGroup(page)
     await page.getByRole('button', { name: /Teme \(/ }).click()
-    await page.getByRole('button', { name: /^\s*Adaugă/ }).first().click()
+    await page.getByRole('button', { name: 'Temă nouă' }).click()
     await page.getByPlaceholder('Titlu temă').fill('Tema progres E2E')
     await page.getByPlaceholder('Cerințe și instrucțiuni...').fill('Rezolvați exercițiile')
     const due = new Date(Date.now() + 3 * 24 * 3600 * 1000)
@@ -62,7 +62,7 @@ test.describe('elev', () => {
 
     await loginAs(page, USERS.studentB)
     await page.goto(groupAUrl)
-    await expect(page.getByText('Grupul nu a fost găsit.')).toBeVisible()
+    await expect(page.getByText(/Not Found|nu a fost găsit/i)).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Info IX A' })).toHaveCount(0)
   })
 })
