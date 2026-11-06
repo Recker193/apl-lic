@@ -53,7 +53,14 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
       "Subject",
       "SchoolClass",
       "User",
-      "School"
+      "School",
+      "Term",
+      "GradeEntry",
+      "GradeRevision",
+      "Absence",
+      "ConductGrade",
+      "TermAverage",
+      "HomeroomAssignment"
     RESTART IDENTITY CASCADE;
   `);
 }

@@ -21,7 +21,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "bootstrap:admin": "ts-node --compiler-options {\"module\":\"commonjs\"} src/scripts/bootstrap-admin.ts",
+    "bootstrap:admin": "node -r dotenv/config src/scripts/bootstrap-admin.js",
     "e2e:seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" test/e2e-seed.ts",
     "test:e2e:ui": "npm --prefix web run test:e2e",
     "prisma:seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts"
