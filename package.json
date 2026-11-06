@@ -22,9 +22,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "bootstrap:admin": "node -r dotenv/config src/scripts/bootstrap-admin.js",
-    "e2e:seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" test/e2e-seed.ts",
+    "e2e:seed": "node -r dotenv/config test/e2e-seed.js",
     "test:e2e:ui": "npm --prefix web run test:e2e",
-    "prisma:seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts"
+    "prisma:seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts",
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

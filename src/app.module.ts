@@ -38,7 +38,7 @@ import { UsersModule } from './users/users.module';
   imports: [
     LoggerModule.forRoot(buildLoggerParams()),
     ThrottlerModule.forRoot({
-      throttlers: [{ ttl: 60000, limit: 10000 }],
+      throttlers: [{ ttl: 60000, limit: 1000 }],
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
@@ -71,6 +71,7 @@ import { UsersModule } from './users/users.module';
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: CsrfGuard },
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
   ],
 })
 export class AppModule {}
