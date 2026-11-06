@@ -56,6 +56,10 @@ enum NotificationType {
   MATERIAL_CREATED
   ANNOUNCEMENT_CREATED
   SCHOOL_EVENT_CREATED
+  GRADE_ADDED
+  GRADE_CHANGED
+  ABSENCE_RECORDED
+  TERM_CLOSED
 }
 
 model School {
@@ -65,17 +69,22 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users         User[]
-  classes       SchoolClass[]
-  subjects      Subject[]
-  groups        SubjectGroup[]
-  events        SchoolEvent[]
-  invitations   Invitation[]
-  announcements Announcement[]
-  assignments   Assignment[]
-  exams         Exam[]
-  materials     Material[]
-  auditLogs     AuditLog[]
+  users             User[]
+  classes           SchoolClass[]
+  subjects          Subject[]
+  groups            SubjectGroup[]
+  events            SchoolEvent[]
+  invitations       Invitation[]
+  announcements     Announcement[]
+  assignments       Assignment[]
+  exams             Exam[]
+  materials         Material[]
+  auditLogs         AuditLog[]
+  terms             Term[]
+  grades            GradeEntry[]
+  absences          Absence[]
+  conductGrades     ConductGrade[]
+  homeroomAssignments HomeroomAssignment[]
 }
 
 model User {
@@ -107,6 +116,16 @@ model User {
   invitationsCreated Invitation[]          @relation("InvitationCreator")
   emailTokens        EmailToken[]
   loginAttempts      LoginAttempt[]
+  gradesGiven        GradeEntry[]          @relation("GradeTeacher")
+  gradesReceived     GradeEntry[]          @relation("GradeStudent")
+  gradeRevisions     GradeRevision[]
+  absences           Absence[]             @relation("AbsenceStudent")
+  absencesExcused    Absence[]             @relation("AbsenceExcusedBy")
+  absencesRecorded   Absence[]             @relation("AbsenceRecordedBy")
+  conductGradesSet   ConductGrade[]        @relation("ConductGradeSetBy")
+  conductGrades      ConductGrade[]        @relation("ConductGradeStudent")
+  termAverages       TermAverage[]
+  homeroomAssignments HomeroomAssignment[]
 
   @@index([schoolId])
   @@index([role])
@@ -185,10 +204,11 @@ model SchoolClass {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  school       School             @relation(fields: [schoolId], references: [id], onDelete: Restrict)
-  memberships  ClassMembership[]
-  groups       SubjectGroup[]
-  invitations  Invitation[]
+  school              School             @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  memberships         ClassMembership[]
+  groups              SubjectGroup[]
+  invitations         Invitation[]
+  homeroomAssignments HomeroomAssignment[]
 
   @@unique([schoolId, name, schoolYear])
   @@index([schoolId])
@@ -239,6 +259,9 @@ model SubjectGroup {
   exams          Exam[]
   materials      Material[]
   invitations    Invitation[]
+  grades         GradeEntry[]
+  absences       Absence[]
+  termAverages   TermAverage[]
 
   @@unique([subjectId, classId])
   @@index([schoolId])
@@ -411,4 +434,175 @@ model AuditLog {
 
   @@index([schoolId, createdAt])
   @@index([actorId])
+}
+
+enum TermStatus {
+  OPEN
+  CLOSED
+}
+
+enum GradeType {
+  ORAL
+  TEST
+  HOMEWORK
+  PROJECT
+  THESIS
+}
+
+enum GradeStatus {
+  ACTIVE
+  VOIDED
+}
+
+enum AbsenceStatus {
+  UNEXCUSED
+  EXCUSED
+}
+
+model Term {
+  id         String     @id @default(uuid())
+  schoolId   String
+  schoolYear String
+  number     Int
+  startsAt   DateTime
+  endsAt     DateTime
+  status     TermStatus @default(OPEN)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  school      School        @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  grades      GradeEntry[]
+  absences    Absence[]
+  conductGrades ConductGrade[]
+  termAverages TermAverage[]
+
+  @@unique([schoolId, schoolYear, number])
+  @@index([schoolId])
+  @@index([status])
+}
+
+model GradeEntry {
+  id          String      @id @default(uuid())
+  schoolId    String
+  termId      String
+  groupId     String
+  studentId   String
+  teacherId   String
+  type        GradeType
+  value       Int
+  gradedAt    DateTime
+  comment     String?
+  status      GradeStatus @default(ACTIVE)
+  voidedReason String?
+  version     Int         @default(1)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  school   School        @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  term     Term          @relation(fields: [termId], references: [id], onDelete: Restrict)
+  group    SubjectGroup  @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  student  User          @relation("GradeStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  teacher  User          @relation("GradeTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
+  revisions GradeRevision[]
+
+  @@index([studentId, termId])
+  @@index([groupId, termId])
+  @@index([schoolId])
+}
+
+model GradeRevision {
+  id             String   @id @default(uuid())
+  gradeId        String
+  actorId        String
+  previousValue  Int?
+  newValue       Int?
+  previousStatus GradeStatus?
+  newStatus      GradeStatus?
+  reason         String
+  createdAt      DateTime @default(now())
+
+  grade  GradeEntry @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  actor  User       @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([gradeId])
+  @@index([actorId])
+}
+
+model Absence {
+  id            String        @id @default(uuid())
+  schoolId      String
+  termId        String
+  studentId     String
+  groupId       String?
+  date          DateTime
+  status        AbsenceStatus @default(UNEXCUSED)
+  excuseReason  String?
+  excusedById   String?
+  recordedById  String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  school       School       @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  term         Term         @relation(fields: [termId], references: [id], onDelete: Restrict)
+  student      User         @relation("AbsenceStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  group        SubjectGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  excusedBy    User?        @relation("AbsenceExcusedBy", fields: [excusedById], references: [id], onDelete: SetNull)
+  recordedBy   User         @relation("AbsenceRecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, groupId, date])
+  @@index([studentId, date])
+  @@index([schoolId])
+}
+
+model ConductGrade {
+  id        String   @id @default(uuid())
+  schoolId  String
+  termId    String
+  studentId String
+  value     Int
+  setById   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school  School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  term    Term   @relation(fields: [termId], references: [id], onDelete: Restrict)
+  student User   @relation("ConductGradeStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  setBy   User   @relation("ConductGradeSetBy", fields: [setById], references: [id], onDelete: Restrict)
+
+  @@unique([termId, studentId])
+  @@index([schoolId])
+}
+
+model TermAverage {
+  id         String   @id @default(uuid())
+  termId     String
+  groupId    String
+  studentId  String
+  average    Float
+  thesis     Int?
+  computedAt DateTime @default(now())
+
+  term    Term         @relation(fields: [termId], references: [id], onDelete: Cascade)
+  group   SubjectGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([termId, groupId, studentId])
+}
+
+model HomeroomAssignment {
+  id         String   @id @default(uuid())
+  schoolId   String
+  classId    String
+  teacherId  String
+  schoolYear String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  school  School      @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  class   SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher User        @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+  @@unique([classId, schoolYear])
+  @@index([schoolId])
+  @@index([teacherId])
 }

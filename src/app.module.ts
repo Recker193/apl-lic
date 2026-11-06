@@ -17,6 +17,7 @@ import { CalendarModule } from './calendar/calendar.module';
 import { ClassesModule } from './classes/classes.module';
 import { EventsModule } from './events/events.module';
 import { ExamsModule } from './exams/exams.module';
+import { GradesModule } from './grades/grades.module';
 import { GroupsModule } from './groups/groups.module';
 import { HealthModule } from './health/health.module';
 import { InvitationsModule } from './invitations/invitations.module';
@@ -56,6 +57,7 @@ import { UsersModule } from './users/users.module';
     NotificationsModule,
     EventsModule,
     CalendarModule,
+    GradesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
