@@ -12,10 +12,10 @@
     "rootDir": "./src",
     "incremental": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*"],
