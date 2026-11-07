@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { loadEnv } from './config/env';
@@ -35,6 +36,18 @@ export async function createApp(): Promise<INestApplication> {
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Serve static frontend files in production
+  if (env.nodeEnv === 'production') {
+    app.useStaticAssets(join(__dirname, '..', '..', 'web', 'dist'));
+    // SPA fallback: serve index.html for non-API routes
+    app.use((req, res, next) => {
+      if (req.path.startsWith('/api')) {
+        return next();
+      }
+      res.sendFile(join(__dirname, '..', '..', 'web', 'dist', 'index.html'));
+    });
+  }
 
   if (env.nodeEnv !== 'test' && env.enableSwagger) {
     const swagger = new DocumentBuilder()

@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "cd web && npm run build && cd .. && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -24,7 +24,7 @@
     "bootstrap:admin": "node -r dotenv/config src/scripts/bootstrap-admin.js",
     "e2e:seed": "node -r dotenv/config test/e2e-seed.js",
     "test:e2e:ui": "npm --prefix web run test:e2e",
-    "prisma:seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts",
+    "prisma:seed": "node -r dotenv/config prisma/seed.js",
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -95,6 +95,6 @@
     "testEnvironment": "node"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts"
+    "seed": "node -r dotenv/config prisma/seed.js"
   }
 }
