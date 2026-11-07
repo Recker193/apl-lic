@@ -9,6 +9,8 @@ export class ApiError extends Error {
   }
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -25,7 +27,8 @@ export async function apiClient<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const url = endpoint.startsWith('/') ? endpoint : `/api/v1/${endpoint}`;
+  const path = endpoint.startsWith('/') ? endpoint : `/api/v1/${endpoint}`;
+  const url = API_BASE_URL ? `${API_BASE_URL}${path}` : path;
 
   const response = await fetch(url, {
     ...options,
