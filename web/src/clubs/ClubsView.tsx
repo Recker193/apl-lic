@@ -100,7 +100,7 @@ export const ClubsView: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
+          <div className="bg-accent-blue" style={{ padding: '0.5rem', borderRadius: '0.5rem' }}>
             <AssetIcon assetKey="clubs" fallbackIcon={Compass} size={28} />
           </div>
           <div>
@@ -233,9 +233,7 @@ export const ClubsView: React.FC = () => {
           justifyContent: 'center',
           zIndex: 1000,
         }}>
-          <div style={{
-            backgroundColor: 'var(--bg-card)',
-            borderRadius: '0.5rem',
+          <div className="modal-inner" style={{
             padding: '1.5rem',
             maxWidth: '460px',
             width: '90%',
@@ -243,7 +241,7 @@ export const ClubsView: React.FC = () => {
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Înființează un Club Nou</h2>
 
             {errorMsg && (
-              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div className="alert-error" style={{ marginBottom: '1rem' }}>
                 {errorMsg}
               </div>
             )}

@@ -220,7 +220,7 @@ export const CatalogView: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
+          <div className="bg-accent-blue" style={{ padding: '0.5rem', borderRadius: '0.5rem' }}>
             <AssetIcon assetKey="catalog" fallbackIcon={GraduationCap} size={28} />
           </div>
           <div>
@@ -312,7 +312,7 @@ export const CatalogView: React.FC = () => {
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
         <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
+          <div className="bg-info-subtle" style={{ padding: '0.75rem', borderRadius: '0.5rem' }}>
             <Award size={24} />
           </div>
           <div>
@@ -322,7 +322,7 @@ export const CatalogView: React.FC = () => {
         </div>
 
         <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.5rem', color: 'var(--danger)' }}>
+          <div className="bg-danger-subtle" style={{ padding: '0.75rem', borderRadius: '0.5rem' }}>
             <AlertCircle size={24} />
           </div>
           <div>
@@ -332,12 +332,12 @@ export const CatalogView: React.FC = () => {
         </div>
 
         <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', color: '#16a34a' }}>
+          <div className="bg-success-subtle" style={{ padding: '0.75rem', borderRadius: '0.5rem' }}>
             <CheckCircle2 size={24} />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Absențe Motivate</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#16a34a' }}>{excusedCount}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700 }} className="text-success">{excusedCount}</div>
           </div>
         </div>
       </div>
@@ -356,7 +356,7 @@ export const CatalogView: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: '#f8fafc' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)' }} className="table-row-alt">
                   {isTeacherOrAdmin && <th style={{ padding: '0.75rem' }}>Elev</th>}
                   <th style={{ padding: '0.75rem' }}>Materie</th>
                   <th style={{ padding: '0.75rem' }}>Notă</th>
@@ -380,15 +380,13 @@ export const CatalogView: React.FC = () => {
                       </span>
                     </td>
                     <td style={{ padding: '0.75rem' }}>
-                      <span style={{
+                      <span className={g.value >= 5 ? 'grade-badge-pass' : 'grade-badge-fail'} style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         width: '28px',
                         height: '28px',
                         borderRadius: '50%',
-                        backgroundColor: g.value >= 5 ? '#eff6ff' : '#fee2e2',
-                        color: g.value >= 5 ? 'var(--primary)' : 'var(--danger)',
                         fontWeight: 700,
                       }}>
                         {g.value}
@@ -436,7 +434,7 @@ export const CatalogView: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: '#f8fafc' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)' }} className="table-row-alt">
                   {isTeacherOrAdmin && <th style={{ padding: '0.75rem' }}>Elev</th>}
                   <th style={{ padding: '0.75rem' }}>Materie / Curs</th>
                   <th style={{ padding: '0.75rem' }}>Data</th>
@@ -464,7 +462,7 @@ export const CatalogView: React.FC = () => {
                     </td>
                     <td style={{ padding: '0.75rem' }}>
                       {a.status === 'EXCUSED' ? (
-                        <span style={{ color: '#16a34a', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 500 }}>
+                        <span className="text-success" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 500 }}>
                           <CheckCircle2 size={14} /> Motivată
                         </span>
                       ) : (
@@ -511,8 +509,7 @@ export const CatalogView: React.FC = () => {
           justifyContent: 'center',
           zIndex: 1000,
         }}>
-          <div style={{
-            backgroundColor: '#fff',
+          <div className="modal-inner" style={{
             borderRadius: '0.5rem',
             padding: '1.5rem',
             maxWidth: '420px',
@@ -624,8 +621,7 @@ export const CatalogView: React.FC = () => {
           justifyContent: 'center',
           zIndex: 1000,
         }}>
-          <div style={{
-            backgroundColor: '#fff',
+          <div className="modal-inner" style={{
             borderRadius: '0.5rem',
             padding: '1.5rem',
             maxWidth: '420px',

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { apiClient } from '../api/client';
-import { Group, SchoolEvent, NotificationItem, TimetableEntry, DayOfWeek } from '../api/types';
-import { BookOpen, Calendar, Bell, ArrowRight, Clock, GraduationCap, Award } from 'lucide-react';
+import { Group, SchoolEvent, NotificationItem, TimetableEntry, DayOfWeek, Assignment } from '../api/types';
+import { BookOpen, Calendar, Bell, ArrowRight, Clock, GraduationCap, Award, ClipboardList } from 'lucide-react';
 
 const DAY_KEYS: DayOfWeek[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
 
@@ -13,6 +13,7 @@ export const Home: React.FC = () => {
   const [events, setEvents] = useState<SchoolEvent[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [todayClasses, setTodayClasses] = useState<TimetableEntry[]>([]);
+  const [pendingAssignments, setPendingAssignments] = useState<{ total: number; byGroup: { group: Group; count: number }[] }>({ total: 0, byGroup: [] });
   const [loading, setLoading] = useState(true);
 
   // Determină ziua curentă (Luni = 1 ... Vineri = 5)
@@ -31,13 +32,34 @@ export const Home: React.FC = () => {
         setGroups(gList);
         setEvents(eList.slice(0, 5));
         setNotifications(nList.slice(0, 5));
-        
+
         // Filtrare ore de azi
         if (todayKey) {
           const today = timetableList
             .filter((t) => t.dayOfWeek === todayKey)
             .sort((a, b) => a.period - b.period);
           setTodayClasses(today);
+        }
+
+        // Teme nefinalizate: fetch din toate grupurile în paralel
+        if (gList.length > 0) {
+          const assignmentLists = await Promise.all(
+            gList.map((g) =>
+              apiClient<Assignment[]>(`/api/v1/groups/${g.id}/assignments`).catch(() => []),
+            ),
+          );
+          const byGroup: { group: Group; count: number }[] = [];
+          let total = 0;
+          gList.forEach((g, i) => {
+            const pending = assignmentLists[i].filter(
+              (a) => a.status === 'PUBLISHED' && a.progress?.status !== 'COMPLETED',
+            );
+            if (pending.length > 0) {
+              byGroup.push({ group: g, count: pending.length });
+              total += pending.length;
+            }
+          });
+          setPendingAssignments({ total, byGroup });
         }
       } finally {
         setLoading(false);
@@ -84,7 +106,7 @@ export const Home: React.FC = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '0.625rem 0.75rem',
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: 'var(--bg-subtle)',
                     borderRadius: '0.375rem',
                     borderLeft: '3px solid var(--primary)',
                   }}
@@ -120,6 +142,71 @@ export const Home: React.FC = () => {
           <Link to="/catalog" className="btn btn-outline" style={{ marginTop: '1rem', justifyContent: 'center' }}>
             <Award size={16} /> Consultă Catalogul
           </Link>
+        </div>
+
+        {/* Teme nefinalizate */}
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ClipboardList size={20} color="var(--primary)" /> Teme nefinalizate
+              {pendingAssignments.total > 0 && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '22px',
+                  height: '22px',
+                  padding: '0 5px',
+                  backgroundColor: 'var(--danger)',
+                  color: 'white',
+                  borderRadius: '9999px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}>
+                  {pendingAssignments.total}
+                </span>
+              )}
+            </h2>
+            <Link to="/groups" style={{ fontSize: '0.875rem' }}>Grupuri</Link>
+          </div>
+          {pendingAssignments.total === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              ✓ Toate temele sunt finalizate. Felicitări!
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              {pendingAssignments.byGroup.map(({ group, count }) => (
+                <Link
+                  key={group.id}
+                  to={`/groups/${group.id}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.625rem 0.75rem',
+                    backgroundColor: 'var(--bg-subtle)',
+                    borderRadius: '0.375rem',
+                    borderLeft: '3px solid var(--warning)',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                  }}
+                >
+                  <span style={{ fontWeight: 500, fontSize: '0.875rem' }}>{group.name}</span>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'var(--warning)',
+                  }}>
+                    {count} {count === 1 ? 'temă' : 'teme'}
+                    <ArrowRight size={13} />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Grupurile mele */}

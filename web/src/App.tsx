@@ -13,7 +13,7 @@ import { ResetPassword } from './auth/ResetPassword';
 import { VerifyEmail } from './auth/VerifyEmail';
 import { Profile } from './profile/Profile';
 
-import { Home } from './app/Home';
+import { MobileHome } from './app/MobileHome';
 import { GroupsList } from './groups/GroupsList';
 import { GroupDetail } from './groups/GroupDetail';
 import { NotificationsList } from './notifications/NotificationsList';
@@ -36,6 +36,12 @@ const AppLayout: React.FC = () => {
   return isMobile ? <MobileLayout /> : <Layout />;
 };
 
+/**
+ * Componenta Home alege versiunea mobilă sau desktop
+ * în funcție de viewport — MobileHome face asta intern.
+ */
+const HomeRoute: React.FC = () => <MobileHome />;
+
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -51,7 +57,7 @@ export const App: React.FC = () => {
           {/* Rute protejate de sesiune — layout ales dinamic */}
           <Route element={<RequireAuth />}>
             <Route element={<AppLayout />}>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<HomeRoute />} />
               <Route path="/groups" element={<GroupsList />} />
               <Route path="/groups/:id" element={<GroupDetail />} />
               <Route path="/notifications" element={<NotificationsList />} />

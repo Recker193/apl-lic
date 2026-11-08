@@ -21,6 +21,7 @@ import {
   Compass, 
   ExternalLink 
 } from 'lucide-react';
+import { useMobile } from '../common/useMobile';
 
 const WEEKDAY_KEYS: { key: DayOfWeek; label: string }[] = [
   { key: 'MONDAY', label: 'Luni' },
@@ -63,6 +64,21 @@ const DEFAULT_AFTERNOON_SLOTS: PeriodSlot[] = [
 ];
 
 export const TimetableView: React.FC = () => {
+  const isMobile = useMobile();
+  const [activeMobileDay, setActiveMobileDay] = useState<DayOfWeek>(() => {
+    const today = new Date().getDay();
+    const map: Record<number, DayOfWeek> = {
+      1: 'MONDAY',
+      2: 'TUESDAY',
+      3: 'WEDNESDAY',
+      4: 'THURSDAY',
+      5: 'FRIDAY',
+      6: 'SATURDAY',
+      0: 'SUNDAY',
+    };
+    return map[today] || 'MONDAY';
+  });
+
   const { user } = useAuth();
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [weekendMeetings, setWeekendMeetings] = useState<WeekendMeeting[]>([]);
@@ -350,7 +366,7 @@ export const TimetableView: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
+          <div className="bg-accent-blue" style={{ padding: '0.5rem', borderRadius: '0.5rem' }}>
             <AssetIcon assetKey="timetable" fallbackIcon={Clock} size={28} />
           </div>
           <div>
@@ -408,10 +424,138 @@ export const TimetableView: React.FC = () => {
         </div>
       </div>
 
+      {/* Selector Zi pentru ecran mobil (<768px) */}
+      {isMobile && !loading && (
+        <div style={{
+          display: 'flex',
+          gap: '0.35rem',
+          overflowX: 'auto',
+          paddingBottom: '0.25rem',
+          WebkitOverflowScrolling: 'touch',
+        }}>
+          {displayDays.map((d) => {
+            const isSelected = activeMobileDay === d.key;
+            const isWeekend = d.key === 'SATURDAY' || d.key === 'SUNDAY';
+            return (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => setActiveMobileDay(d.key)}
+                className="btn"
+                style={{
+                  flex: '0 0 auto',
+                  padding: '0.4rem 0.75rem',
+                  fontSize: '0.8rem',
+                  borderRadius: '9999px',
+                  backgroundColor: isSelected
+                    ? (isWeekend ? '#8b5cf6' : 'var(--primary)')
+                    : 'var(--bg-subtle)',
+                  color: isSelected ? '#ffffff' : 'var(--text-muted)',
+                  border: isSelected
+                    ? '1px solid transparent'
+                    : '1px solid var(--border)',
+                  fontWeight: isSelected ? 600 : 500,
+                }}
+              >
+                {d.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Grid Timetable Dinamic Luni - Vineri + Sâmbătă & Duminică */}
       {loading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
           Se încarcă orarul...
+        </div>
+      ) : isMobile ? (
+        /* Vizualizare tip listă / acordeon pe zile pentru mobil */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {customSlots.map((slot) => {
+            const isWeekend = activeMobileDay === 'SATURDAY' || activeMobileDay === 'SUNDAY';
+            if (isWeekend) {
+              const meeting = weekendMeetings.find(
+                (m) => m.dayOfWeek === activeMobileDay && m.startTime <= slot.start && m.endTime >= slot.end
+              );
+              return (
+                <div key={slot.period} className="card" style={{ padding: '0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.35rem' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{slot.label}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{slot.start} - {slot.end}</span>
+                  </div>
+                  {meeting ? (
+                    <div className="bg-purple-subtle" style={{ borderLeft: '4px solid #8b5cf6', borderRadius: '0.375rem', padding: '0.625rem', position: 'relative' }}>
+                      <div className="text-purple" style={{ fontWeight: 600, fontSize: '0.9rem' }}>{meeting.title}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>{meeting.club?.name}</div>
+                      {meeting.room && <div style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>Sala: {meeting.room}</div>}
+                      {(isAdmin || meeting.club?.coordinatorId === user?.id) && (
+                        <button
+                          onClick={(ev) => handleDeleteWeekendMeeting(meeting.id, ev)}
+                          style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
+                  ) : isClubCoordinator ? (
+                    <button
+                      onClick={() => handleOpenSlot(activeMobileDay, slot)}
+                      className="btn btn-outline"
+                      style={{ width: '100%', fontSize: '0.8rem', borderStyle: 'dashed', color: '#8b5cf6' }}
+                    >
+                      <Plus size={14} /> Adaugă activitate club
+                    </button>
+                  ) : (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>Liber</div>
+                  )}
+                </div>
+              );
+            }
+
+            const entry = entries.find((e) => e.dayOfWeek === activeMobileDay && e.period === slot.period);
+            return (
+              <div key={slot.period} className="card" style={{ padding: '0.875rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.35rem' }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{slot.label}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{slot.start} - {slot.end}</span>
+                </div>
+                {entry ? (
+                  <div style={{ backgroundColor: 'var(--bg-subtle)', borderLeft: '4px solid var(--primary)', borderRadius: '0.375rem', padding: '0.625rem', position: 'relative' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                      {entry.subject?.name || 'Materie'}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      Prof. {entry.teacher?.firstName} {entry.teacher?.lastName}
+                    </div>
+                    {entry.room && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 500, marginTop: '0.2rem' }}>
+                        Sala: {entry.room}
+                      </div>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={(ev) => handleDeleteEntry(entry.id, ev)}
+                        style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
+                ) : isAdmin ? (
+                  <button
+                    onClick={() => handleOpenSlot(activeMobileDay, slot)}
+                    className="btn btn-outline"
+                    style={{ width: '100%', fontSize: '0.8rem', borderStyle: 'dashed' }}
+                  >
+                    <Plus size={14} /> Adaugă oră de curs
+                  </button>
+                ) : (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>Pauză / Fără oră</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div style={{ overflowX: 'auto', backgroundColor: 'var(--bg-card)', borderRadius: '0.75rem', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -471,14 +615,13 @@ export const TimetableView: React.FC = () => {
                             }}
                           >
                             {meeting ? (
-                              <div style={{
-                                backgroundColor: '#f5f3ff',
+                              <div className="bg-purple-subtle" style={{
                                 borderLeft: '4px solid #8b5cf6',
                                 borderRadius: '0.375rem',
                                 padding: '0.5rem 0.625rem',
                                 position: 'relative',
                               }}>
-                                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#5b21b6' }}>
+                                <div className="text-purple" style={{ fontWeight: 600, fontSize: '0.85rem' }}>
                                   {meeting.club?.name || 'Club'}
                                 </div>
                                 <div style={{ fontSize: '0.8rem', fontWeight: 500, marginTop: '0.15rem' }}>
@@ -493,12 +636,12 @@ export const TimetableView: React.FC = () => {
                                     href={meeting.club.formsUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    className="text-purple"
                                     style={{
                                       display: 'inline-flex',
                                       alignItems: 'center',
                                       gap: '0.25rem',
                                       fontSize: '0.7rem',
-                                      color: '#7c3aed',
                                       marginTop: '0.35rem',
                                       textDecoration: 'underline',
                                     }}
@@ -687,7 +830,7 @@ export const TimetableView: React.FC = () => {
             </div>
 
             {errorMsg && (
-              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div className="alert-error" style={{ marginBottom: '1rem' }}>
                 {errorMsg}
               </div>
             )}
@@ -804,7 +947,7 @@ export const TimetableView: React.FC = () => {
             </p>
 
             {errorMsg && (
-              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div className="alert-error" style={{ marginBottom: '1rem' }}>
                 {errorMsg}
               </div>
             )}

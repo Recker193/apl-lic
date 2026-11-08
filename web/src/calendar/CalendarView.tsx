@@ -46,7 +46,7 @@ export const CalendarView: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
         {/* Teste viitoare */}
         <div className="card">
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#b91c1c' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--danger)' }}>
             Teste & Examene programate
           </h2>
           {data.exams.length === 0 ? (
@@ -54,7 +54,7 @@ export const CalendarView: React.FC = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {data.exams.map((ex) => (
-                <div key={ex.id} style={{ padding: '0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.375rem' }}>
+                <div key={ex.id} className="bg-danger-subtle" style={{ padding: '0.75rem', borderRadius: '0.375rem' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ex.title}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
                     <Clock size={12} /> {formatDateTime24(ex.scheduledAt)}
@@ -67,7 +67,7 @@ export const CalendarView: React.FC = () => {
 
         {/* Teme cu termen de predare */}
         <div className="card">
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#d97706' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--warning)' }}>
             Termene-limită teme
           </h2>
           {data.assignments.length === 0 ? (
@@ -75,7 +75,7 @@ export const CalendarView: React.FC = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {data.assignments.map((as) => (
-                <div key={as.id} style={{ padding: '0.75rem', backgroundColor: '#fffbeb', borderRadius: '0.375rem' }}>
+                <div key={as.id} style={{ padding: '0.75rem', backgroundColor: 'var(--bg-subtle)', borderRadius: '0.375rem', borderLeft: '3px solid var(--warning)' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{as.title}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
                     <Clock size={12} /> Predare: {formatDateTime24(as.dueAt)}
@@ -88,7 +88,7 @@ export const CalendarView: React.FC = () => {
 
         {/* Evenimente școlare */}
         <div className="card">
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#1d4ed8' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--primary)' }}>
             Evenimente liceu
           </h2>
           {data.events.length === 0 ? (
@@ -96,7 +96,7 @@ export const CalendarView: React.FC = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {data.events.map((ev) => (
-                <div key={ev.id} style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '0.375rem' }}>
+                <div key={ev.id} className="bg-info-subtle" style={{ padding: '0.75rem', borderRadius: '0.375rem' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ev.title}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                     {new Date(ev.startsAt).toLocaleDateString()} - {new Date(ev.endsAt).toLocaleDateString()}

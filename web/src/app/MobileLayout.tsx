@@ -23,14 +23,16 @@ import {
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
-   Tab-urile afișate în bara de jos (max 5)
+   Tab-urile afișate în bara de jos — 6 taburi
+   (iconuri mai mari, aliniate cu imaginile de referință)
 ───────────────────────────────────────────── */
 const BOTTOM_TABS = [
   { path: '/', icon: Home, label: 'Acasă' },
+  { path: '/groups', icon: BookOpen, label: 'Materii' },
   { path: '/timetable', icon: Clock, label: 'Orar' },
   { path: '/catalog', icon: GraduationCap, label: 'Catalog' },
   { path: '/clubs', icon: Compass, label: 'Cluburi' },
-  { path: '/notifications', icon: Bell, label: 'Notificări' },
+  { path: '/profile', icon: User, label: 'Profil' },
 ];
 
 /* ─────────────────────────────────────────────
@@ -47,6 +49,7 @@ const NAV_SECTIONS = [
       { path: '/exams', icon: FileCheck, label: 'Teste & Examene' },
       { path: '/clubs', icon: Compass, label: 'Cluburi & Activități' },
       { path: '/calendar', icon: Calendar, label: 'Calendar' },
+      { path: '/notifications', icon: Bell, label: 'Notificări' },
     ],
   },
   {
@@ -60,7 +63,6 @@ const NAV_SECTIONS = [
   {
     title: 'Contul meu',
     items: [
-      { path: '/notifications', icon: Bell, label: 'Notificări' },
       { path: '/profile', icon: User, label: 'Profil' },
     ],
   },
@@ -76,6 +78,7 @@ export const MobileLayout: React.FC = () => {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [schoolName, setSchoolName] = useState<string>('');
 
   // Dark Mode
   const [isDarkMode, setIsDarkMode] = useState<boolean>(
@@ -94,7 +97,7 @@ export const MobileLayout: React.FC = () => {
   // Polling notificări
   useEffect(() => {
     if (!user) return;
-    const fetch = async () => {
+    const fetchNotifs = async () => {
       try {
         const notifs = await apiClient<any[]>('/api/v1/notifications');
         setUnreadCount(notifs.filter((n) => !n.readAt).length);
@@ -102,10 +105,18 @@ export const MobileLayout: React.FC = () => {
         /* ignore */
       }
     };
-    fetch();
-    const iv = setInterval(fetch, 60000);
+    fetchNotifs();
+    const iv = setInterval(fetchNotifs, 60000);
     return () => clearInterval(iv);
   }, [user, location.pathname]);
+
+  // Fetch numele școlii pentru header
+  useEffect(() => {
+    if (!user) return;
+    apiClient<{ name: string }>('/api/v1/admin/school')
+      .then((s) => setSchoolName(s.name))
+      .catch(() => setSchoolName('HSSA Portal'));
+  }, [user]);
 
   // Închide drawer-ul la navigare
   useEffect(() => {
@@ -116,23 +127,21 @@ export const MobileLayout: React.FC = () => {
 
   return (
     <div className="mobile-layout">
-      {/* ── Header mobil ── */}
+      {/* ── Header mobil cu numele școlii centrat ── */}
       <header className="mobile-header">
-        <span className="mobile-header-logo">HSSA</span>
-        <div className="mobile-header-right">
-          {user && (
-            <span className={`badge badge-${user.role.toLowerCase()}`} style={{ fontSize: '0.65rem' }}>
-              {user.firstName}
-            </span>
-          )}
-          <button
-            className="mobile-icon-btn"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Deschide meniu"
-          >
-            <Menu size={22} />
-          </button>
+        <div className="mobile-header-school">
+          {schoolName || 'HSSA Portal'}
         </div>
+        <button
+          className="mobile-icon-btn mobile-header-menu-btn"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Deschide meniu"
+        >
+          {unreadCount > 0 && (
+            <span className="mobile-header-notif-dot" />
+          )}
+          <Menu size={22} />
+        </button>
       </header>
 
       {/* ── Conținut principal ── */}
@@ -144,16 +153,10 @@ export const MobileLayout: React.FC = () => {
       <nav className="mobile-tab-bar">
         {BOTTOM_TABS.map(({ path, icon: Icon, label }) => {
           const active = isActive(path);
-          const isNotif = path === '/notifications';
           return (
             <Link key={path} to={path} className={`mobile-tab${active ? ' mobile-tab--active' : ''}`}>
               <span className="mobile-tab-icon-wrap">
-                <Icon size={22} />
-                {isNotif && unreadCount > 0 && (
-                  <span className="mobile-notif-badge">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
+                <Icon size={24} strokeWidth={active ? 2.5 : 1.8} />
               </span>
               <span className="mobile-tab-label">{label}</span>
             </Link>
@@ -171,7 +174,7 @@ export const MobileLayout: React.FC = () => {
         {/* Header drawer */}
         <div className="mobile-drawer-header">
           <div>
-            <div className="mobile-drawer-title">HSSA Portal</div>
+            <div className="mobile-drawer-title">{schoolName || 'HSSA Portal'}</div>
             {user && (
               <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className={`badge badge-${user.role.toLowerCase()}`}>{user.role}</span>
@@ -193,7 +196,6 @@ export const MobileLayout: React.FC = () => {
         {/* Navigare în drawer */}
         <nav className="mobile-drawer-nav custom-scrollbar">
           {NAV_SECTIONS.map((section, si) => {
-            // Filtrare pe rol
             if (section.roles && user && !section.roles.includes(user.role)) return null;
 
             return (

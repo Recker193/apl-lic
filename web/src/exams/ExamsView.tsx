@@ -90,7 +90,7 @@ export const ExamsView: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', backgroundColor: '#fee2e2', borderRadius: '0.5rem', color: '#b91c1c' }}>
+          <div className="bg-danger-subtle" style={{ padding: '0.5rem', borderRadius: '0.5rem' }}>
             <AssetIcon assetKey="exams" fallbackIcon={CalendarIcon} size={28} />
           </div>
           <div>
@@ -156,7 +156,7 @@ export const ExamsView: React.FC = () => {
               )}
 
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: '#b91c1c', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Clock size={14} /> {formatDateTime24(ex.scheduledAt)}
                 </span>
                 <span className="badge badge-student" style={{ fontSize: '0.75rem' }}>
@@ -182,9 +182,7 @@ export const ExamsView: React.FC = () => {
           justifyContent: 'center',
           zIndex: 1000,
         }}>
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '0.5rem',
+          <div className="modal-inner" style={{
             padding: '1.5rem',
             maxWidth: '440px',
             width: '90%',
@@ -192,7 +190,7 @@ export const ExamsView: React.FC = () => {
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Programează un test / examen</h2>
 
             {errorMsg && (
-              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div className="alert-error" style={{ marginBottom: '1rem' }}>
                 {errorMsg}
               </div>
             )}

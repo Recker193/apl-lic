@@ -408,8 +408,17 @@ a:hover {
   }
 
   /* Tabelele devin scrollabile orizontal */
+  .table-responsive,
+  .table-wrapper {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   table {
     display: block;
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     white-space: nowrap;
@@ -418,4 +427,664 @@ a:hover {
   /* Headings mai mici */
   h1 { font-size: 1.35rem !important; }
   h2 { font-size: 1.1rem !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE REDESIGN v2 — bazat pe imaginile de referință
+═══════════════════════════════════════════════════════════ */
+
+/* ── Culoarea verde specifică școlii (ca în imagine) ── */
+:root {
+  --mobile-school-color: #2d7a3a;
+  --mobile-school-color-light: #e8f5e9;
+}
+[data-theme='dark'] {
+  --mobile-school-color: #4caf50;
+  --mobile-school-color-light: #1b3a1f;
+}
+
+/* ── Header mobil redesenat ── */
+.mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  height: 56px;
+  background-color: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Numele școlii — centrat, verde, bold (ca în imagine) */
+.mobile-header-school {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--mobile-school-color);
+  text-align: center;
+  max-width: 60%;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-header-menu-btn {
+  position: relative;
+  margin-left: auto;
+}
+
+/* Dot indicator notificări necitite pe butonul de meniu */
+.mobile-header-notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--danger);
+  border-radius: 50%;
+  border: 2px solid var(--bg-sidebar);
+}
+
+/* ── Bottom tab bar redesenat (6 taburi, ca în imagine) ── */
+.mobile-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  background-color: var(--bg-sidebar);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+  height: calc(62px + env(safe-area-inset-bottom));
+}
+
+.mobile-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 2px 4px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 400;
+  transition: color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-tab--active {
+  color: var(--text-main);
+  font-weight: 700;
+}
+.mobile-tab:hover {
+  text-decoration: none;
+  color: var(--text-main);
+}
+
+/* Ajustăm main pentru 6 taburi mai înalte */
+.mobile-main {
+  padding-bottom: calc(74px + env(safe-area-inset-bottom));
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE HOME (MobileHome.tsx)
+═══════════════════════════════════════════════ */
+
+.mhome {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mhome-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+}
+
+.mhome-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Card de salut (ca în imagine: fundal gri deschis, data mică, mesaj bold) ── */
+.mhome-greeting-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-subtle);
+  border-radius: 14px;
+  padding: 1.125rem 1rem 1rem 1.125rem;
+  margin-bottom: 1.5rem;
+  min-height: 90px;
+  border: 1px solid var(--border);
+}
+[data-theme='dark'] .mhome-greeting-card {
+  background-color: var(--bg-card);
+}
+
+.mhome-greeting-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mhome-greeting-date {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.mhome-greeting-title {
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.3;
+}
+.mhome-greeting-title strong {
+  font-weight: 800;
+}
+
+.mhome-greeting-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.mhome-greeting-icon {
+  flex-shrink: 0;
+  margin-left: 1rem;
+  opacity: 0.7;
+}
+
+/* ── Secțiuni (titlu simplu, fără card wrapper) ── */
+.mhome-section {
+  margin-bottom: 1.5rem;
+}
+
+.mhome-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.mhome-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 0.75rem;
+}
+
+.mhome-section-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: 0.75rem;
+}
+.mhome-section-link:hover { text-decoration: underline; }
+
+.mhome-see-all {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 500;
+  text-decoration: none;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0;
+}
+.mhome-see-all:hover { text-decoration: underline; }
+
+.mhome-empty-text {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* ── Lista de teme "Ce ai de făcut" (ca în imagine: icon colorat, badge tip dreapta) ── */
+.mhome-task-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.mhome-task-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.mhome-task-item:last-child { border-bottom: none; }
+.mhome-task-item:hover { opacity: 0.8; }
+
+.mhome-task-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mhome-task-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.mhome-task-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mhome-task-deadline {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Badge tip (Proiect / Temă / Test) — dreptunghi rotunjit mic, dreapta */
+.mhome-task-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Notificări necitite ── */
+.mhome-notif-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.mhome-notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+}
+.mhome-notif-item:last-child { border-bottom: none; }
+
+.mhome-notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.mhome-notif-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mhome-notif-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.mhome-notif-msg {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── Evenimente "În liceu" (thumbnail + text, ca în imagine) ── */
+.mhome-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mhome-event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.mhome-event-thumb {
+  width: 68px;
+  height: 52px;
+  border-radius: 10px;
+  background-color: var(--mobile-school-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.mhome-event-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mhome-event-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mhome-event-date {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════
+   SEARCH BAR MOBIL (ca în imaginea Materii)
+═══════════════════════════════════════════════ */
+
+.mobile-search-bar-wrap {
+  width: 100%;
+}
+
+.mobile-search-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  font-size: 0.9rem;
+  background-color: var(--bg-subtle);
+  border: none;
+  border-radius: 12px;
+  outline: none;
+  color: var(--text-main);
+  transition: background-color 0.15s;
+}
+.mobile-search-input::placeholder {
+  color: var(--text-muted);
+}
+.mobile-search-input:focus {
+  background-color: var(--bg-hover);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+[data-theme='dark'] .mobile-search-input {
+  background-color: var(--bg-card);
+}
+[data-theme='dark'] .mobile-search-input:focus {
+  background-color: var(--bg-subtle);
+}
+
+/* ── Titlu de pagină mare (ca în imagine Materii: "Materii" aliniat stânga) ── */
+.mobile-page-title {
+  font-size: 1.75rem !important;
+  font-weight: 800 !important;
+  color: var(--text-main);
+  margin: 0 0 0.25rem !important;
+  line-height: 1.15;
+}
+
+/* ═══════════════════════════════════════════════
+   TASK TYPE COLORS — dark mode safe
+   Folosite în MobileHome pentru iconuri și badge-uri
+═══════════════════════════════════════════════ */
+
+/* Proiect — amber */
+.task-type-project {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+/* Temă — albastru */
+.task-type-homework {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+/* Test — violet */
+.task-type-test {
+  background-color: #ede9fe;
+  color: #7c3aed;
+}
+/* Teză — roșu */
+.task-type-thesis {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+[data-theme='dark'] .task-type-project {
+  background-color: #451a03;
+  color: #fbbf24;
+}
+[data-theme='dark'] .task-type-homework {
+  background-color: #1e3a5f;
+  color: #60a5fa;
+}
+[data-theme='dark'] .task-type-test {
+  background-color: #2e1065;
+  color: #a78bfa;
+}
+[data-theme='dark'] .task-type-thesis {
+  background-color: #450a0a;
+  color: #f87171;
+}
+
+/* ═══════════════════════════════════════════════
+   DARK MODE — fix-uri suplimentare mobile
+═══════════════════════════════════════════════ */
+
+/* Carduri de orar din Home desktop pe dark */
+[data-theme='dark'] .timetable-day-item {
+  background-color: var(--bg-subtle);
+}
+
+/* Drawer mobil — fundal corect pe dark */
+[data-theme='dark'] .mobile-drawer {
+  background-color: var(--bg-sidebar);
+}
+
+/* Thumb eveniment pe dark */
+[data-theme='dark'] .mhome-event-thumb {
+  background-color: var(--mobile-school-color-light);
+}
+
+/* Input și select-uri în modal pe dark */
+[data-theme='dark'] select.input-field,
+[data-theme='dark'] input.input-field,
+[data-theme='dark'] input.input,
+[data-theme='dark'] select.input {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border);
+  color-scheme: dark;
+}
+
+/* Modal overlay pe dark */
+[data-theme='dark'] .modal-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+/* Notif dot pe dark */
+[data-theme='dark'] .mhome-notif-dot {
+  background-color: var(--primary);
+}
+
+/* Badge-uri simple de culori fixe (ex: "Ora 1") pe dark */
+[data-theme='dark'] .badge-teacher {
+  background-color: #312e81;
+  color: #c7d2fe;
+}
+
+/* Ajustare padding pagina principală pe mobil */
+@media (max-width: 767px) {
+  .mobile-main {
+    padding: 1rem 1rem calc(74px + env(safe-area-inset-bottom));
+  }
+
+  /* Headings pagini pe mobil */
+  .mobile-page-title {
+    font-size: 1.75rem !important;
+    font-weight: 800 !important;
+  }
+
+  /* Ascunde subtitlul verbose pe mobil când e sub titlul de pagină */
+  .mobile-page-subtitle-hide {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   CLASE UTILITARE SEMANTICE — dark mode safe
+   Înlocuiesc inline styles hardcodate din view-uri
+═══════════════════════════════════════════════ */
+
+/* Fundal accent albastru (icon wrapper) */
+.bg-accent-blue {
+  background-color: #e0e7ff;
+  color: var(--primary);
+}
+[data-theme='dark'] .bg-accent-blue {
+  background-color: #1e3a5f;
+  color: #60a5fa;
+}
+
+/* Fundal albastru subtil (info box, note active) */
+.bg-info-subtle {
+  background-color: #eff6ff;
+  color: var(--primary);
+}
+[data-theme='dark'] .bg-info-subtle {
+  background-color: #1e3a5f;
+  color: #93c5fd;
+}
+
+/* Fundal roșu subtil (absente, erori) */
+.bg-danger-subtle {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+[data-theme='dark'] .bg-danger-subtle {
+  background-color: #450a0a;
+  color: #f87171;
+}
+
+/* Fundal verde subtil (motivate, succes) */
+.bg-success-subtle {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+[data-theme='dark'] .bg-success-subtle {
+  background-color: #052e16;
+  color: #4ade80;
+}
+
+/* Fundal violet subtil (weekend, clubs) */
+.bg-purple-subtle {
+  background-color: #f5f3ff;
+  color: #5b21b6;
+}
+[data-theme='dark'] .bg-purple-subtle {
+  background-color: #2e1065;
+  color: #a78bfa;
+}
+
+/* Mesaj de eroare roșu (form errors) */
+.alert-error {
+  padding: 0.75rem;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+[data-theme='dark'] .alert-error {
+  background-color: #450a0a;
+  color: #f87171;
+}
+
+/* Badge nota mare (>=5 albastru, <5 rosu) */
+.grade-badge-pass {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+[data-theme='dark'] .grade-badge-pass {
+  background-color: #1e3a5f;
+  color: #93c5fd;
+}
+.grade-badge-fail {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+[data-theme='dark'] .grade-badge-fail {
+  background-color: #450a0a;
+  color: #f87171;
+}
+
+/* Rând de tabel alternativ / header */
+.table-row-alt {
+  background-color: var(--bg-subtle);
+}
+[data-theme='dark'] .table-row-alt {
+  background-color: var(--bg-card);
+}
+
+/* Modal card intern */
+.modal-inner {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+}
+[data-theme='dark'] .modal-inner {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+/* Text verde accent */
+.text-success {
+  color: #16a34a;
+}
+[data-theme='dark'] .text-success {
+  color: #4ade80;
+}
+
+/* Text violet accent */
+.text-purple {
+  color: #7c3aed;
+}
+[data-theme='dark'] .text-purple {
+  color: #a78bfa;
 }

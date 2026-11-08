@@ -37,12 +37,12 @@ export const Profile: React.FC = () => {
 
       <div className="card">
         {message && (
-          <div style={{ padding: '0.75rem', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+          <div className="bg-success-subtle" style={{ padding: '0.75rem', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
             {message}
           </div>
         )}
         {error && (
-          <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+          <div className="alert-error" style={{ marginBottom: '1rem' }}>
             {error}
           </div>
         )}
@@ -57,7 +57,7 @@ export const Profile: React.FC = () => {
               disabled
               className="input-field"
               value={user?.email || ''}
-              style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}
+              style={{ backgroundColor: 'var(--bg-subtle)', cursor: 'not-allowed' }}
             />
           </div>
 

@@ -132,7 +132,7 @@ export const ClassesView: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
+          <div className="bg-accent-blue" style={{ padding: '0.5rem', borderRadius: '0.5rem' }}>
             <AssetIcon assetKey="classes" fallbackIcon={List} size={28} />
           </div>
           <div>
@@ -201,7 +201,7 @@ export const ClassesView: React.FC = () => {
                     <Calendar size={13} /> An școlar: {c.schoolYear}
                   </span>
                 </div>
-                <div style={{ padding: '0.35rem', backgroundColor: '#eff6ff', borderRadius: '0.375rem', color: 'var(--primary)' }}>
+                <div className="bg-accent-blue" style={{ padding: '0.35rem', borderRadius: '0.375rem' }}>
                   <Users size={18} />
                 </div>
               </div>
@@ -229,9 +229,7 @@ export const ClassesView: React.FC = () => {
           justifyContent: 'center',
           zIndex: 1000,
         }}>
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '0.75rem',
+          <div className="modal-inner" style={{
             padding: '1.75rem',
             maxWidth: '580px',
             width: '90%',
@@ -259,7 +257,7 @@ export const ClassesView: React.FC = () => {
 
             {/* Adăugare elev în clasă (Profesor / Admin) */}
             {canManage && (
-              <form onSubmit={handleAddStudent} style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', alignItems: 'center' }}>
+              <form onSubmit={handleAddStudent} style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'var(--bg-subtle)', padding: '0.75rem', borderRadius: '0.5rem', alignItems: 'center' }}>
                 <select
                   className="input"
                   style={{ flex: 1 }}
@@ -290,7 +288,7 @@ export const ClassesView: React.FC = () => {
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid var(--border)' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }} className="table-row-alt">
                       <th style={{ padding: '0.625rem 0.875rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>#</th>
                       <th style={{ padding: '0.625rem 0.875rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Elev</th>
                       <th style={{ padding: '0.625rem 0.875rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Email</th>
@@ -348,9 +346,7 @@ export const ClassesView: React.FC = () => {
           justifyContent: 'center',
           zIndex: 1000,
         }}>
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '0.5rem',
+          <div className="modal-inner" style={{
             padding: '1.5rem',
             maxWidth: '420px',
             width: '90%',
@@ -358,7 +354,7 @@ export const ClassesView: React.FC = () => {
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Creează clasă nouă</h2>
 
             {errorMsg && (
-              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div className="alert-error" style={{ marginBottom: '1rem' }}>
                 {errorMsg}
               </div>
             )}

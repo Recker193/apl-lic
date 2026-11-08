@@ -86,7 +86,7 @@ export const GroupsList: React.FC = () => {
           <div className="card" style={{ width: '100%', maxWidth: '450px' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Creare grup nou</h2>
             {error && (
-              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div className="alert-error" style={{ marginBottom: '1rem' }}>
                 {error}
               </div>
             )}

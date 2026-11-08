@@ -55,17 +55,12 @@ export const SubjectsView: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
-            <AssetIcon assetKey="subjects" fallbackIcon={BookOpen} size={28} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Materii & Discipline</h1>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              Disciplinele de studiu predate în unitatea de învățământ
-            </p>
-          </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="mobile-page-title">Materii</h1>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+            Disciplinele de studiu predate în unitatea de învățământ
+          </p>
         </div>
 
         {isAdmin && (
@@ -75,15 +70,24 @@ export const SubjectsView: React.FC = () => {
         )}
       </div>
 
-      {/* Căutare */}
-      <div style={{ display: 'flex', gap: '0.5rem', maxWidth: '400px' }}>
+      {/* Căutare — stil mobil (search bar proeminent) */}
+      <div className="mobile-search-bar-wrap">
         <div style={{ position: 'relative', width: '100%' }}>
-          <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <Search
+            size={18}
+            style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-muted)',
+              pointerEvents: 'none',
+            }}
+          />
           <input
             type="text"
-            className="input"
-            placeholder="Caută o materie..."
-            style={{ paddingLeft: '2.25rem' }}
+            className="mobile-search-input"
+            placeholder="Caută materii, lecții..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -103,12 +107,10 @@ export const SubjectsView: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
           {filtered.map((s) => (
             <div key={s.id} className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{
+              <div className="bg-accent-blue" style={{
                 width: '42px',
                 height: '42px',
                 borderRadius: '0.5rem',
-                backgroundColor: '#eff6ff',
-                color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -143,9 +145,7 @@ export const SubjectsView: React.FC = () => {
           justifyContent: 'center',
           zIndex: 1000,
         }}>
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '0.5rem',
+          <div className="modal-inner" style={{
             padding: '1.5rem',
             maxWidth: '420px',
             width: '90%',
@@ -153,7 +153,7 @@ export const SubjectsView: React.FC = () => {
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Adaugă o nouă materie</h2>
 
             {errorMsg && (
-              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+              <div className="alert-error" style={{ marginBottom: '1rem' }}>
                 {errorMsg}
               </div>
             )}
