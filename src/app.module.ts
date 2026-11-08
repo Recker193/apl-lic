@@ -32,6 +32,7 @@ import { SchoolsModule } from './schools/schools.module';
 import { StorageModule } from './storage/storage.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { TermsModule } from './terms/terms.module';
+import { TimetableModule } from './timetable/timetable.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -66,6 +67,7 @@ import { UsersModule } from './users/users.module';
     AbsencesModule,
     TermsModule,
     HomeroomModule,
+    TimetableModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

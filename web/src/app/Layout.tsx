@@ -9,7 +9,9 @@ import {
   User, 
   LogOut, 
   Shield, 
-  Home
+  Home,
+  List,
+  Clock
 } from 'lucide-react';
 
 export const Layout: React.FC = () => {
@@ -102,6 +104,18 @@ export const Layout: React.FC = () => {
           </Link>
           <Link to="/profile" style={navLinkStyle('/profile')}>
             <User size={18} /> Profil
+          </Link>
+          <Link to="/catalog" style={navLinkStyle('/catalog')}>
+            <BookOpen size={18} /> Catalog
+          </Link>
+          <Link to="/timetable" style={navLinkStyle('/timetable')}>
+            <Clock size={18} /> Orar
+          </Link>
+          <Link to="/classes" style={navLinkStyle('/classes')}>
+            <List size={18} /> Clase
+          </Link>
+          <Link to="/subjects" style={navLinkStyle('/subjects')}>
+            <BookOpen size={18} /> Materii
           </Link>
 
           {user?.role === 'ADMIN' && (

@@ -85,6 +85,7 @@ model School {
   absences          Absence[]
   conductGrades     ConductGrade[]
   homeroomAssignments HomeroomAssignment[]
+  timetableEntries  TimetableEntry[]
 }
 
 model User {
@@ -126,6 +127,7 @@ model User {
   conductGrades      ConductGrade[]        @relation("ConductGradeStudent")
   termAverages       TermAverage[]
   homeroomAssignments HomeroomAssignment[]
+  taughtTimetable    TimetableEntry[]      @relation("TimetableTeacher")
 
   @@index([schoolId])
   @@index([role])
@@ -209,6 +211,7 @@ model SchoolClass {
   groups              SubjectGroup[]
   invitations         Invitation[]
   homeroomAssignments HomeroomAssignment[]
+  timetableEntries    TimetableEntry[]
 
   @@unique([schoolId, name, schoolYear])
   @@index([schoolId])
@@ -235,6 +238,7 @@ model Subject {
 
   school School         @relation(fields: [schoolId], references: [id], onDelete: Restrict)
   groups SubjectGroup[]
+  timetableEntries TimetableEntry[]
 
   @@unique([schoolId, name])
 }
@@ -605,4 +609,36 @@ model HomeroomAssignment {
   @@unique([classId, schoolYear])
   @@index([schoolId])
   @@index([teacherId])
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+}
+
+model TimetableEntry {
+  id         String    @id @default(uuid())
+  schoolId   String
+  classId    String
+  subjectId  String
+  teacherId  String
+  dayOfWeek  DayOfWeek
+  period     Int       // 1-7
+  startTime  String    // ex: "08:00"
+  endTime    String    // ex: "08:50"
+  room       String?   // ex: "Sala 12"
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  school  School      @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  class   SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject Subject     @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  teacher User        @relation("TimetableTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
+
+  @@unique([classId, dayOfWeek, period])
+  @@index([schoolId])
+  @@index([teacherId, dayOfWeek, period])
 }

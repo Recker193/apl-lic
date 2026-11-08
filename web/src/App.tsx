@@ -17,6 +17,10 @@ import { GroupDetail } from './groups/GroupDetail';
 import { NotificationsList } from './notifications/NotificationsList';
 import { CalendarView } from './calendar/CalendarView';
 import { AdminDashboard } from './admin/AdminDashboard';
+import { CatalogView } from './catalog/CatalogView';
+import { TimetableView } from './timetable/TimetableView';
+import { ClassesView } from './classes/ClassesView';
+import { SubjectsView } from './subjects/SubjectsView';
 
 export const App: React.FC = () => {
   return (
@@ -39,6 +43,10 @@ export const App: React.FC = () => {
               <Route path="/notifications" element={<NotificationsList />} />
               <Route path="/calendar" element={<CalendarView />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/catalog" element={<CatalogView />} />
+              <Route path="/timetable" element={<TimetableView />} />
+              <Route path="/classes" element={<ClassesView />} />
+              <Route path="/subjects" element={<SubjectsView />} />
 
               {/* Rute exclusiv ADMIN */}
               <Route element={<RequireRole roles={['ADMIN']} />}>

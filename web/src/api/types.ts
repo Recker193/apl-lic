@@ -134,3 +134,103 @@ export interface AuditLogItem {
   createdAt: string;
 }
 
+export interface SchoolClass {
+  id: string;
+  name: string;
+  schoolYear: string;
+  schoolId: string;
+  createdAt?: string;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  schoolId: string;
+  createdAt?: string;
+}
+
+export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
+
+
+export interface TimetableEntry {
+  id: string;
+  schoolId: string;
+  classId: string;
+  subjectId: string;
+  teacherId: string;
+  dayOfWeek: DayOfWeek;
+  period: number;
+  startTime: string;
+  endTime: string;
+  room?: string;
+  class: {
+    id: string;
+    name: string;
+    schoolYear: string;
+  };
+  subject: {
+    id: string;
+    name: string;
+  };
+  teacher: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+export interface Term {
+  id: string;
+  number: number;
+  schoolYear: string;
+  status: 'OPEN' | 'CLOSED';
+  startsAt: string;
+  endsAt: string;
+}
+
+export interface GradeEntry {
+  id: string;
+  schoolId: string;
+  termId: string;
+  groupId: string;
+  studentId: string;
+  teacherId: string;
+  type: 'ORAL' | 'TEST' | 'HOMEWORK' | 'PROJECT' | 'THESIS';
+  value: number;
+  gradedAt: string;
+  comment?: string;
+  status: 'ACTIVE' | 'VOIDED';
+  student?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  teacher?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  group?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface AbsenceEntry {
+  id: string;
+  termId: string;
+  studentId: string;
+  groupId?: string;
+  date: string;
+  status: 'UNEXCUSED' | 'EXCUSED';
+  excuseReason?: string;
+  group?: {
+    id: string;
+    name: string;
+  };
+  student?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
