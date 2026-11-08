@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { TimetableEntry, DayOfWeek, SchoolClass, Subject, User } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
+import { TimePicker24 } from '../common/TimePicker24';
 import { Clock, Plus, Trash2, Printer, Settings2 } from 'lucide-react';
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
@@ -464,23 +465,17 @@ export const TimetableView: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="label">Ora început</label>
-                  <input
-                    type="time"
-                    className="input"
+                  <label className="label">Ora început (24h)</label>
+                  <TimePicker24
                     value={formStartTime}
-                    onChange={(e) => setFormStartTime(e.target.value)}
-                    required
+                    onChange={setFormStartTime}
                   />
                 </div>
                 <div>
-                  <label className="label">Ora sfârșit</label>
-                  <input
-                    type="time"
-                    className="input"
+                  <label className="label">Ora sfârșit (24h)</label>
+                  <TimePicker24
                     value={formEndTime}
-                    onChange={(e) => setFormEndTime(e.target.value)}
-                    required
+                    onChange={setFormEndTime}
                   />
                 </div>
               </div>
@@ -603,9 +598,9 @@ export const TimetableView: React.FC = () => {
             {/* Adăugare slot nou personalizat */}
             <form onSubmit={handleAddSlot} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', backgroundColor: 'var(--bg-main)', padding: '0.875rem', borderRadius: '0.5rem' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Adaugă un rând de oră personalizat:</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr auto', gap: '0.5rem', alignItems: 'end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.5fr auto', gap: '0.5rem', alignItems: 'end' }}>
                 <div>
-                  <label className="label" style={{ fontSize: '0.75rem' }}>Etichetă (ex: Ora 8 / Curs)</label>
+                  <label className="label" style={{ fontSize: '0.75rem' }}>Etichetă</label>
                   <input
                     type="text"
                     className="input"
@@ -615,23 +610,17 @@ export const TimetableView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="label" style={{ fontSize: '0.75rem' }}>Început</label>
-                  <input
-                    type="time"
-                    className="input"
+                  <label className="label" style={{ fontSize: '0.75rem' }}>Început (24h)</label>
+                  <TimePicker24
                     value={newSlotStart}
-                    onChange={(e) => setNewSlotStart(e.target.value)}
-                    required
+                    onChange={setNewSlotStart}
                   />
                 </div>
                 <div>
-                  <label className="label" style={{ fontSize: '0.75rem' }}>Sfârșit</label>
-                  <input
-                    type="time"
-                    className="input"
+                  <label className="label" style={{ fontSize: '0.75rem' }}>Sfârșit (24h)</label>
+                  <TimePicker24
                     value={newSlotEnd}
-                    onChange={(e) => setNewSlotEnd(e.target.value)}
-                    required
+                    onChange={setNewSlotEnd}
                   />
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 0.75rem' }}>
