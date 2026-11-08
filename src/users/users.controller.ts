@@ -32,6 +32,7 @@ export class UsersController {
   }
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   list(
     @CurrentUser() user: AuthenticatedUser,
     @Query('role') role?: string,

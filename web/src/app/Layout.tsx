@@ -13,7 +13,9 @@ import {
   List,
   Clock,
   GraduationCap,
-  FileCheck
+  FileCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const Layout: React.FC = () => {
@@ -21,6 +23,25 @@ export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Dark Mode State with LocalStorage persistence
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('hssa_theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('hssa_theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('hssa_theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => !prev);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -45,16 +66,27 @@ export const Layout: React.FC = () => {
     padding: '0.625rem 0.875rem',
     borderRadius: '0.375rem',
     color: location.pathname === path ? 'var(--primary)' : 'var(--text-main)',
-    backgroundColor: location.pathname === path ? '#eff6ff' : 'transparent',
+    backgroundColor: location.pathname === path ? 'var(--bg-hover)' : 'transparent',
     fontWeight: location.pathname === path ? 600 : 400,
     textDecoration: 'none',
   });
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
-      <aside style={{ width: '260px', backgroundColor: '#fff', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main)' }}>
+      {/* Sidebar cu scrollbar propriu */}
+      <aside style={{ 
+        width: '260px', 
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
+        backgroundColor: 'var(--bg-sidebar)', 
+        borderRight: '1px solid var(--border)', 
+        display: 'flex', 
+        flexDirection: 'column',
+        zIndex: 50,
+      }}>
+        {/* Header Sidebar */}
+        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <BookOpen size={22} /> HSSA Portal
           </h2>
@@ -70,7 +102,18 @@ export const Layout: React.FC = () => {
           )}
         </div>
 
-        <nav style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+        {/* Scrollable Navigation Bar (Independent scroll) */}
+        <nav 
+          className="custom-scrollbar"
+          style={{ 
+            padding: '1rem', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '0.25rem', 
+            flex: 1,
+            overflowY: 'auto',
+          }}
+        >
           <Link to="/" style={navLinkStyle('/')}>
             <Home size={18} /> Panou principal
           </Link>
@@ -147,7 +190,24 @@ export const Layout: React.FC = () => {
           )}
         </nav>
 
-        <div style={{ padding: '1rem', borderTop: '1px solid var(--border)' }}>
+        {/* Footer Sidebar: Dark Mode Toggle & Deconectare */}
+        <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {/* Buton Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="btn btn-outline"
+            style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.85rem' }}
+            title="Schimbă tema de culori"
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {isDarkMode ? <Moon size={16} color="var(--warning)" /> : <Sun size={16} color="var(--warning)" />}
+              <span>{isDarkMode ? 'Mod Întunecat' : 'Mod Luminos'}</span>
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+              {isDarkMode ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
           <button 
             onClick={logout} 
             className="btn btn-outline" 
@@ -167,4 +227,3 @@ export const Layout: React.FC = () => {
     </div>
   );
 };
-
