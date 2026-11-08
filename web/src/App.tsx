@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth, RequireRole } from './app/RouteGuards';
 import { Layout } from './app/Layout';
+import { MobileLayout } from './app/MobileLayout';
+import { useMobile } from './common/useMobile';
 
 import { Login } from './auth/Login';
 import { Register } from './auth/Register';
@@ -24,6 +26,16 @@ import { SubjectsView } from './subjects/SubjectsView';
 import { ExamsView } from './exams/ExamsView';
 import { ClubsView } from './clubs/ClubsView';
 
+/**
+ * Alege layout-ul potrivit în funcție de dimensiunea ecranului.
+ * Pe mobil (< 768 px) se folosește MobileLayout cu bottom tab bar.
+ * Pe desktop se folosește Layout-ul clasic cu sidebar.
+ */
+const AppLayout: React.FC = () => {
+  const isMobile = useMobile();
+  return isMobile ? <MobileLayout /> : <Layout />;
+};
+
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -36,9 +48,9 @@ export const App: React.FC = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
-          {/* Rute protejate de sesiune */}
+          {/* Rute protejate de sesiune — layout ales dinamic */}
           <Route element={<RequireAuth />}>
-            <Route element={<Layout />}>
+            <Route element={<AppLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/groups" element={<GroupsList />} />
               <Route path="/groups/:id" element={<GroupDetail />} />
