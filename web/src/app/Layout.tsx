@@ -24,6 +24,7 @@ export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [schoolName, setSchoolName] = useState<string>('');
 
   // Dark Mode State with LocalStorage persistence
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -46,6 +47,13 @@ export const Layout: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
+    apiClient<{ name: string }>('/api/v1/admin/school')
+      .then((s) => setSchoolName(s.name))
+      .catch(() => setSchoolName('HSSA Portal'));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
     const fetchNotifications = async () => {
       try {
         const notifs = await apiClient<any[]>('/api/v1/notifications');
@@ -60,142 +68,137 @@ export const Layout: React.FC = () => {
     return () => clearInterval(interval);
   }, [user, location.pathname]);
 
-  const navLinkStyle = (path: string) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    padding: '0.625rem 0.875rem',
-    borderRadius: '0.375rem',
-    color: location.pathname === path ? 'var(--primary)' : 'var(--text-main)',
-    backgroundColor: location.pathname === path ? 'var(--bg-hover)' : 'transparent',
-    fontWeight: location.pathname === path ? 600 : 400,
-    textDecoration: 'none',
-  });
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main)' }}>
       {/* Sidebar cu scrollbar propriu */}
-      <aside style={{ 
-        width: '260px', 
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        backgroundColor: 'var(--bg-sidebar)', 
-        borderRight: '1px solid var(--border)', 
-        display: 'flex', 
-        flexDirection: 'column',
-        zIndex: 50,
-      }}>
-        {/* Header Sidebar */}
-        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <BookOpen size={22} /> HSSA Portal
-          </h2>
-          {user && (
-            <div style={{ marginTop: '0.5rem' }}>
-              <span className={`badge badge-${user.role.toLowerCase()}`}>
-                {user.role}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-                {user.firstName} {user.lastName}
-              </span>
+      <aside className="desktop-sidebar">
+        {/* Header Sidebar — Nume școală cu verde ca pe mobil */}
+        <div className="desktop-sidebar-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--mobile-school-color-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--mobile-school-color)',
+            }}>
+              <BookOpen size={20} />
             </div>
-          )}
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h2 style={{
+                fontSize: '1rem',
+                fontWeight: 700,
+                color: 'var(--mobile-school-color)',
+                margin: 0,
+                lineHeight: 1.25,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {schoolName || 'HSSA Portal'}
+              </h2>
+              {user && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
+                  <span className={`badge badge-${user.role.toLowerCase()}`} style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                    {user.role}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.firstName} {user.lastName}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Scrollable Navigation Bar (Independent scroll) */}
         <nav 
           className="custom-scrollbar"
           style={{ 
-            padding: '1rem', 
+            padding: '1rem 0.85rem', 
             display: 'flex', 
             flexDirection: 'column', 
-            gap: '0.25rem', 
+            gap: '0.3rem', 
             flex: 1,
             overflowY: 'auto',
           }}
         >
-          <Link to="/" style={navLinkStyle('/')}>
-            <Home size={18} /> Panou principal
+          <div style={{ padding: '0.25rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Meniu Principal
+          </div>
+          <Link to="/" className={`desktop-nav-link ${isActive('/') ? 'desktop-nav-link--active' : ''}`}>
+            <Home size={18} /> <span>Acasă</span>
           </Link>
-          <Link to="/catalog" style={navLinkStyle('/catalog')}>
-            <GraduationCap size={18} /> Catalog
+          <Link to="/groups" className={`desktop-nav-link ${isActive('/groups') ? 'desktop-nav-link--active' : ''}`}>
+            <BookOpen size={18} /> <span>Materii & Grupuri</span>
           </Link>
-          <Link to="/timetable" style={navLinkStyle('/timetable')}>
-            <Clock size={18} /> Orar
+          <Link to="/timetable" className={`desktop-nav-link ${isActive('/timetable') ? 'desktop-nav-link--active' : ''}`}>
+            <Clock size={18} /> <span>Orar Școlar</span>
           </Link>
-          <Link to="/groups" style={navLinkStyle('/groups')}>
-            <BookOpen size={18} /> Grupurile mele
+          <Link to="/catalog" className={`desktop-nav-link ${isActive('/catalog') ? 'desktop-nav-link--active' : ''}`}>
+            <GraduationCap size={18} /> <span>Catalog Electronic</span>
           </Link>
-          <Link to="/exams" style={navLinkStyle('/exams')}>
-            <FileCheck size={18} /> Teste & Examene
+          <Link to="/clubs" className={`desktop-nav-link ${isActive('/clubs') ? 'desktop-nav-link--active' : ''}`}>
+            <Compass size={18} /> <span>Cluburi & Activități</span>
           </Link>
-          <Link to="/clubs" style={navLinkStyle('/clubs')}>
-            <Compass size={18} /> Cluburi & Activități
+          <Link to="/exams" className={`desktop-nav-link ${isActive('/exams') ? 'desktop-nav-link--active' : ''}`}>
+            <FileCheck size={18} /> <span>Teste & Examene</span>
           </Link>
-          <Link to="/calendar" style={navLinkStyle('/calendar')}>
-            <Calendar size={18} /> Calendar
+          <Link to="/calendar" className={`desktop-nav-link ${isActive('/calendar') ? 'desktop-nav-link--active' : ''}`}>
+            <Calendar size={18} /> <span>Calendar Școlar</span>
           </Link>
 
           {(user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
             <>
-              <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              <div style={{ margin: '1rem 0 0.35rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Management Școală
               </div>
-              <Link to="/classes" style={navLinkStyle('/classes')}>
-                <List size={18} /> Clase
+              <Link to="/classes" className={`desktop-nav-link ${isActive('/classes') ? 'desktop-nav-link--active' : ''}`}>
+                <List size={18} /> <span>Clase</span>
               </Link>
-              <Link to="/subjects" style={navLinkStyle('/subjects')}>
-                <BookOpen size={18} /> Materii
+              <Link to="/subjects" className={`desktop-nav-link ${isActive('/subjects') ? 'desktop-nav-link--active' : ''}`}>
+                <BookOpen size={18} /> <span>Gestionare Materii</span>
               </Link>
             </>
           )}
 
-          <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+          <div style={{ margin: '1rem 0 0.35rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Contul Meu
           </div>
-          <Link to="/notifications" style={navLinkStyle('/notifications')}>
+          <Link to="/notifications" className={`desktop-nav-link ${isActive('/notifications') ? 'desktop-nav-link--active' : ''}`}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Bell size={18} />
               {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-6px',
-                  backgroundColor: 'var(--danger)',
-                  color: 'white',
-                  borderRadius: '50%',
-                  fontSize: '0.65rem',
-                  width: '14px',
-                  height: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
+                <span className="nav-badge-pill">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </div>
             <span>Notificări</span>
           </Link>
-          <Link to="/profile" style={navLinkStyle('/profile')}>
-            <User size={18} /> Profil
+          <Link to="/profile" className={`desktop-nav-link ${isActive('/profile') ? 'desktop-nav-link--active' : ''}`}>
+            <User size={18} /> <span>Profilul meu</span>
           </Link>
 
           {user?.role === 'ADMIN' && (
             <>
-              <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              <div style={{ margin: '1rem 0 0.35rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Administrare
               </div>
-              <Link to="/admin" style={navLinkStyle('/admin')}>
-                <Shield size={18} /> Școală & Audit
+              <Link to="/admin" className={`desktop-nav-link ${isActive('/admin') ? 'desktop-nav-link--active' : ''}`}>
+                <Shield size={18} /> <span>Școală & Audit</span>
               </Link>
             </>
           )}
         </nav>
 
         {/* Footer Sidebar: Dark Mode Toggle & Deconectare */}
-        <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="desktop-sidebar-footer">
           {/* Buton Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
@@ -207,7 +210,7 @@ export const Layout: React.FC = () => {
               {isDarkMode ? <Moon size={16} color="var(--warning)" /> : <Sun size={16} color="var(--warning)" />}
               <span>{isDarkMode ? 'Mod Întunecat' : 'Mod Luminos'}</span>
             </span>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               {isDarkMode ? 'ON' : 'OFF'}
             </span>
           </button>
@@ -217,14 +220,14 @@ export const Layout: React.FC = () => {
             className="btn btn-outline" 
             style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)' }}
           >
-            <LogOut size={16} /> Deconectare
+            <LogOut size={16} /> <span>Deconectare</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <main className="desktop-main-wrapper custom-scrollbar">
+        <div style={{ maxWidth: '1080px', margin: '0 auto', width: '100%' }}>
           <Outlet />
         </div>
       </main>

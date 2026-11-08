@@ -2,19 +2,42 @@
 
 **Ultimul update:** 8 noiembrie 2026  
 **Status build:** ✅ TypeScript 0 erori | ✅ Vite build 0 erori  
-**Versiune:** v0.3.1-mobile-redesign-completed
+**Versiune:** v0.3.2-desktop-parity-and-animations
 
 ---
 
 ## 📋 Rezumat Executiv
 
-Frontend-ul HSSA a fost completat și optimizat pentru o experiență mobilă responsivă (< 768px) și desktop, având suport complet pentru **dark mode**, culori CSS semantice fără stiluri hardcodate, tabele scrollabile și vizualizare adaptivă pentru Orar.
+Frontend-ul HSSA a primit o actualizare completă pentru **alinierea interfeței de desktop (calculator) cu cea de pe mobil**, adăugând totodată **polish vizual și un sistem complet de micro-interacțiuni și animații fluide** atât pentru mobil cât și pentru desktop.
 
 ---
 
 ## ✅ Completat
 
-### 1. **Mobile Layout & Navigation**
+### 1. **Paritate Desktop - Mobil & Polish Vizual**
+- ✅ `web/src/app/Layout.tsx` (Desktop):
+  - Sidebar modernizat cu brandingul verde al liceului identic cu cel mobil (`--mobile-school-color`)
+  - Profil utilizator compact cu avatar tematic și badge de rol
+  - Linkuri de navigație cu indicator activ vertical și tranziții elastice la hover
+  - Notificări cu badge pill animat
+  - Header și structură curate
+- ✅ `web/src/app/MobileHome.tsx` & Desktop View:
+  - Adăugat card de salut generos cu orarul zilei, salut dinamic ("Bună dimineața/ziua/seara"), numărul de ore și prima oră de curs
+  - Grid pe două coloane pentru desktop (coloana stângă: *Ce ai de făcut* & *Orar astăzi*, coloana dreaptă: *Catalog quick-card*, *Notificări noi* & *În liceu*)
+  - Păstrat layout-ul nativ pe mobil cu optimizări de spațiere
+
+### 2. **Sistem de Animații & Micro-Interacțiuni**
+- ✅ `web/src/index.css`:
+  - Animații keyframes: `@keyframes fadeIn`, `@keyframes slideDown`, `@keyframes pulseGlow`
+  - Efect de intrare fluidă pe pagini și carduri (`cubic-bezier(0.16, 1, 0.3, 1)`)
+  - **Butoane**: Efect de apăsare fizică (`transform: translateY(-1px)`, active: `scale(0.98)`), glow subtil la hover
+  - **Carduri interactive**: Efect de ridicare lină la hover (`translateY(-2px)` + umbră adâncă)
+  - **Tab bar mobil**: Iconițe animate la selecție/apăsare (`scale(1.08)` activ, tap bounce)
+  - **Task & Notification items**: Slide-in la hover (`translateX(4px)`) și fundal subtil rotunjit
+  - **Drawer mobil**: Deschidere mai elastică și organică (`cubic-bezier(0.32, 0.72, 0, 1)`)
+  - **Badge-uri**: Animație subtilă de mărire la hover
+
+### 3. **Mobile Layout & Navigation**
 - ✅ `web/src/app/MobileLayout.tsx` — Layout mobil cu:
   - Header fix cu școală centrat (verde), dot notificări
   - 6 taburi bottom bar (Acasă, Materii, Orar, Catalog, Cluburi, Profil)

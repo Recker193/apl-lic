@@ -155,9 +155,214 @@ export const MobileHome: React.FC = () => {
     );
   }
 
-  // Pe desktop, redă layout-ul compact normal
+  // Pe desktop, afișăm structura modernă bazată pe MobileHome, adaptată cu grid desktop
   if (!isMobile) {
-    return <DesktopHome />;
+    return (
+      <div className="mhome mhome--desktop animate-fade-in">
+        {/* ── Card de salut Desktop ── */}
+        <div className="mhome-greeting-card card-interactive">
+          <div className="mhome-greeting-inner">
+            <p className="mhome-greeting-date">{dateLabel}</p>
+            <p className="mhome-greeting-title">
+              Bună {now.getHours() < 12 ? 'dimineața' : now.getHours() < 18 ? 'ziua' : 'seara'},{' '}
+              <strong>{user?.firstName}!</strong>
+            </p>
+            {todayClasses.length > 0 ? (
+              <p className="mhome-greeting-sub">
+                {todayClasses.length} {todayClasses.length === 1 ? 'oră' : 'ore'} astăzi ·{' '}
+                prima oră la <strong>{todayClasses[0].startTime}</strong>
+              </p>
+            ) : (
+              <p className="mhome-greeting-sub">
+                {todayKey ? 'Nicio oră programată astăzi.' : 'Weekend liber! 🎉'}
+              </p>
+            )}
+          </div>
+          <div className="mhome-greeting-icon" aria-hidden="true">
+            <Monitor size={54} strokeWidth={1.2} color="var(--mobile-school-color)" />
+          </div>
+        </div>
+
+        {/* ── Grid cu 2 coloane pe Desktop ── */}
+        <div className="mhome-desktop-grid">
+          {/* Coloana Stânga: Ce ai de făcut & Orar de azi */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Ce ai de făcut */}
+            <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
+              <div className="mhome-section-header" style={{ marginBottom: '1rem' }}>
+                <h2 className="mhome-section-title" style={{ margin: 0, fontSize: '1.1rem' }}>Ce ai de făcut</h2>
+                <Link to="/groups" className="mhome-section-link" style={{ margin: 0 }}>
+                  Toate temele <ArrowRight size={14} />
+                </Link>
+              </div>
+
+              {pendingAssignments.length > 0 ? (
+                <div className="mhome-task-list">
+                  {pendingAssignments.map(({ group, assignment }) => {
+                    const typeKey = Object.keys(ASSIGNMENT_TYPE_LABEL).find((k) =>
+                      assignment.title.toUpperCase().includes(k),
+                    ) ?? 'HOMEWORK';
+                    const TaskIcon = ASSIGNMENT_TYPE_ICON[typeKey] ?? ClipboardList;
+                    const label = ASSIGNMENT_TYPE_LABEL[typeKey] ?? 'Temă';
+                    const typeClass = ASSIGNMENT_TYPE_CLASS[typeKey] ?? 'task-type-homework';
+
+                    return (
+                      <Link
+                        key={assignment.id}
+                        to={`/groups/${group.id}`}
+                        className="mhome-task-item"
+                      >
+                        <span className={`mhome-task-icon ${typeClass}`}>
+                          <TaskIcon size={18} />
+                        </span>
+                        <span className="mhome-task-body">
+                          <span className="mhome-task-name">{assignment.title}</span>
+                          <span className="mhome-task-deadline">
+                            {group.name} • {formatDeadline(assignment.dueAt)}
+                          </span>
+                        </span>
+                        <span className={`mhome-task-badge ${typeClass}`}>
+                          {label}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mhome-empty-text">✓ Toate temele sunt la zi. Bravo!</p>
+              )}
+            </section>
+
+            {/* Orar astăzi */}
+            <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
+              <div className="mhome-section-header" style={{ marginBottom: '1rem' }}>
+                <h2 className="mhome-section-title" style={{ margin: 0, fontSize: '1.1rem' }}>
+                  Orar astăzi ({todayClasses.length} {todayClasses.length === 1 ? 'oră' : 'ore'})
+                </h2>
+                <Link to="/timetable" className="mhome-section-link" style={{ margin: 0 }}>
+                  Orar complet <ArrowRight size={14} />
+                </Link>
+              </div>
+
+              {todayClasses.length === 0 ? (
+                <p className="mhome-empty-text">
+                  {todayKey ? 'Nu ai cursuri programate astăzi.' : 'Weekend! Fără ore programate astăzi.'}
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                  {todayClasses.map((c) => (
+                    <div
+                      key={c.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.625rem 0.875rem',
+                        backgroundColor: 'var(--bg-subtle)',
+                        borderRadius: '0.5rem',
+                        borderLeft: '4px solid var(--primary)',
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                          {c.subject?.name}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>
+                          Prof. {c.teacher?.lastName} {c.teacher?.firstName} {c.room ? `• Sala ${c.room}` : ''}
+                        </span>
+                      </div>
+                      <span className="badge badge-teacher" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                        {c.startTime} - {c.endTime}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Coloana Dreapta: Notificări & Evenimente & Link Catalog */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Catalog Card */}
+            <div className="card card-interactive" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
+                    Situație Școlară & Catalog
+                  </h2>
+                  <Link to="/catalog" className="mhome-section-link" style={{ margin: 0 }}>
+                    Catalog <ArrowRight size={14} />
+                  </Link>
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                  Accesează rapid situația mediilor, notele din semestru și evidența absențelor motivate și nemotivate.
+                </p>
+              </div>
+              <Link to="/catalog" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
+                Deschide Catalogul Electronic
+              </Link>
+            </div>
+
+            {/* Notificări recente */}
+            <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
+              <div className="mhome-section-header" style={{ marginBottom: '1rem' }}>
+                <h2 className="mhome-section-title" style={{ margin: 0, fontSize: '1.1rem' }}>Notificări noi</h2>
+                <Link to="/notifications" className="mhome-section-link" style={{ margin: 0 }}>
+                  <Bell size={14} /> {notifications.length}
+                </Link>
+              </div>
+
+              {notifications.length > 0 ? (
+                <div className="mhome-notif-list">
+                  {notifications.map((n) => (
+                    <Link key={n.id} to="/notifications" className="mhome-notif-item">
+                      <span className="mhome-notif-dot" />
+                      <span className="mhome-notif-body">
+                        <span className="mhome-notif-title">{n.title}</span>
+                        <span className="mhome-notif-msg">{n.message}</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="mhome-empty-text">Nu ai notificări noi necitite.</p>
+              )}
+            </section>
+
+            {/* În liceu (evenimente) */}
+            {events.length > 0 && (
+              <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
+                <div className="mhome-section-header" style={{ marginBottom: '1rem' }}>
+                  <h2 className="mhome-section-title" style={{ margin: 0, fontSize: '1.1rem' }}>În liceu</h2>
+                  <Link to="/calendar" className="mhome-section-link" style={{ margin: 0 }}>
+                    Calendar
+                  </Link>
+                </div>
+                <div className="mhome-event-list">
+                  {events.map((e) => (
+                    <div key={e.id} className="mhome-event-item">
+                      <div className="mhome-event-thumb" aria-hidden="true">
+                        <Monitor size={26} strokeWidth={1.2} color="var(--mobile-school-color)" />
+                      </div>
+                      <div className="mhome-event-body">
+                        <span className="mhome-event-title">{e.title}</span>
+                        <span className="mhome-event-date">
+                          {new Date(e.startsAt).toLocaleDateString('ro-RO', {
+                            day: 'numeric',
+                            month: 'long',
+                          })}{' '}
+                          {e.description ? `· ${e.description.slice(0, 50)}` : ''}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

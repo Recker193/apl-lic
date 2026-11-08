@@ -76,67 +76,97 @@ a:hover {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s ease-in-out;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-primary {
   background-color: var(--primary);
   color: white;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
 }
 .btn-primary:hover {
   background-color: var(--primary-hover);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 .btn-outline {
   border-color: var(--border);
   background-color: var(--bg-card);
   color: var(--text-main);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 .btn-outline:hover {
   background-color: var(--bg-hover);
+  border-color: var(--primary);
 }
 
 .btn-danger {
   background-color: var(--danger);
   color: white;
 }
+.btn-danger:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
 
 .input, .input-field {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.85rem;
   font-size: 0.875rem;
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   outline: none;
   background-color: var(--bg-card);
   color: var(--text-main);
-  transition: border-color 0.15s ease;
+  transition: all 0.2s ease;
 }
 .input:focus, .input-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 .card {
   background-color: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: 0.875rem;
   padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   color: var(--text-main);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+}
+
+.card-interactive {
+  cursor: pointer;
+}
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+}
+[data-theme='dark'] .card-interactive:hover {
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), 0 2px 6px -1px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 9999px;
   background-color: var(--bg-subtle);
   color: var(--text-muted);
+  letter-spacing: 0.02em;
 }
 
 .badge-admin { background-color: #fef3c7; color: #92400e; }
@@ -512,18 +542,31 @@ a:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   padding: 6px 2px 4px;
   text-decoration: none;
   color: var(--text-muted);
-  font-size: 0.6rem;
-  font-weight: 400;
-  transition: color 0.12s;
+  font-size: 0.65rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.mobile-tab-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.mobile-tab:active .mobile-tab-icon-wrap {
+  transform: scale(0.85);
 }
 .mobile-tab--active {
-  color: var(--text-main);
+  color: var(--primary);
   font-weight: 700;
+}
+.mobile-tab--active .mobile-tab-icon-wrap {
+  transform: translateY(-2px) scale(1.08);
 }
 .mobile-tab:hover {
   text-decoration: none;
@@ -1087,4 +1130,211 @@ a:hover {
 }
 [data-theme='dark'] .text-purple {
   color: #a78bfa;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP LAYOUT POLISH (Asemănător cu Mobil + Modern)
+═══════════════════════════════════════════════════════════ */
+
+.desktop-sidebar {
+  width: 270px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  box-shadow: 1px 0 6px rgba(0, 0, 0, 0.02);
+}
+
+.desktop-sidebar-header {
+  padding: 1.25rem 1.15rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.desktop-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.625rem;
+  color: var(--text-main);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.desktop-nav-link:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+  transform: translateX(3px);
+  text-decoration: none;
+}
+.desktop-nav-link--active {
+  background-color: var(--bg-hover);
+  color: var(--primary);
+  font-weight: 600;
+}
+.desktop-nav-link--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 3.5px;
+  background-color: var(--mobile-school-color);
+  border-radius: 0 4px 4px 0;
+}
+
+.nav-badge-pill {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background-color: var(--danger);
+  color: white;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-sidebar-footer {
+  padding: 1rem 1.15rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.desktop-main-wrapper {
+  flex: 1;
+  padding: 2.25rem;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.mhome-desktop-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL KEYFRAME ANIMATIONS & POLISH
+═══════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Aplică animație de intrare fluidă pe pagini */
+main > div,
+.mhome,
+.card {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Header mobil polish */
+.mobile-header {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(8px);
+}
+
+.mobile-tab-bar {
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(8px);
+}
+
+/* Drawer polish cu intrare bouncy */
+.mobile-drawer {
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Card salut mobil & desktop polish */
+.mhome-greeting-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.mhome-greeting-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -4px rgba(0, 0, 0, 0.06);
+}
+
+/* Notificări & Teme Hover & Click Polish */
+.mhome-task-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 0.65rem 0.5rem;
+}
+.mhome-task-item:hover {
+  background-color: var(--bg-hover);
+  transform: translateX(4px);
+}
+
+.mhome-notif-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 0.65rem 0.5rem;
+}
+.mhome-notif-item:hover {
+  background-color: var(--bg-hover);
+  transform: translateX(4px);
+}
+
+.mhome-event-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 0.4rem;
+}
+.mhome-event-item:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Butoane & Badge-uri interactive feedback */
+.badge-admin, .badge-teacher, .badge-student {
+  transition: transform 0.15s ease;
+}
+.badge-admin:hover, .badge-teacher:hover, .badge-student:hover {
+  transform: scale(1.05);
 }
