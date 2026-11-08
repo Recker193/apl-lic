@@ -184,7 +184,12 @@ export class AuthService {
         where: { tokenHash: hashToken(rawToken) },
       });
     }
-    res.clearCookie(env.cookieName, { path: '/' });
+    const isProd = env.nodeEnv === 'production';
+    res.clearCookie(env.cookieName, {
+      path: '/',
+      secure: env.cookieSecure || isProd,
+      sameSite: isProd ? 'none' : 'lax',
+    });
   }
 
   async forgotPassword(email: string): Promise<void> {
@@ -246,10 +251,11 @@ export class AuthService {
         userAgent: meta.userAgent?.slice(0, 200),
       },
     });
+    const isProd = env.nodeEnv === 'production';
     res.cookie(env.cookieName, raw, {
       httpOnly: true,
-      secure: env.cookieSecure,
-      sameSite: 'lax',
+      secure: env.cookieSecure || isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
       expires: expiresAt,
     });
