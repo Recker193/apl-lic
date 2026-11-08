@@ -11,7 +11,9 @@ import {
   Shield, 
   Home,
   List,
-  Clock
+  Clock,
+  GraduationCap,
+  FileCheck
 } from 'lucide-react';
 
 export const Layout: React.FC = () => {
@@ -72,12 +74,39 @@ export const Layout: React.FC = () => {
           <Link to="/" style={navLinkStyle('/')}>
             <Home size={18} /> Panou principal
           </Link>
+          <Link to="/catalog" style={navLinkStyle('/catalog')}>
+            <GraduationCap size={18} /> Catalog
+          </Link>
+          <Link to="/timetable" style={navLinkStyle('/timetable')}>
+            <Clock size={18} /> Orar
+          </Link>
           <Link to="/groups" style={navLinkStyle('/groups')}>
             <BookOpen size={18} /> Grupurile mele
+          </Link>
+          <Link to="/exams" style={navLinkStyle('/exams')}>
+            <FileCheck size={18} /> Teste & Examene
           </Link>
           <Link to="/calendar" style={navLinkStyle('/calendar')}>
             <Calendar size={18} /> Calendar
           </Link>
+
+          {(user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
+            <>
+              <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Management Școală
+              </div>
+              <Link to="/classes" style={navLinkStyle('/classes')}>
+                <List size={18} /> Clase
+              </Link>
+              <Link to="/subjects" style={navLinkStyle('/subjects')}>
+                <BookOpen size={18} /> Materii
+              </Link>
+            </>
+          )}
+
+          <div style={{ margin: '1rem 0 0.5rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Contul Meu
+          </div>
           <Link to="/notifications" style={navLinkStyle('/notifications')}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Bell size={18} />
@@ -104,18 +133,6 @@ export const Layout: React.FC = () => {
           </Link>
           <Link to="/profile" style={navLinkStyle('/profile')}>
             <User size={18} /> Profil
-          </Link>
-          <Link to="/catalog" style={navLinkStyle('/catalog')}>
-            <BookOpen size={18} /> Catalog
-          </Link>
-          <Link to="/timetable" style={navLinkStyle('/timetable')}>
-            <Clock size={18} /> Orar
-          </Link>
-          <Link to="/classes" style={navLinkStyle('/classes')}>
-            <List size={18} /> Clase
-          </Link>
-          <Link to="/subjects" style={navLinkStyle('/subjects')}>
-            <BookOpen size={18} /> Materii
           </Link>
 
           {user?.role === 'ADMIN' && (

@@ -6,7 +6,9 @@ import {
   Term, 
   GradeEntry, 
   AbsenceEntry, 
-  GroupMember 
+  GroupMember,
+  User,
+  Subject
 } from '../api/types';
 import { 
   GraduationCap, 
@@ -15,7 +17,12 @@ import {
   Plus, 
   CheckCircle2, 
   XCircle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Printer,
+  Trash2,
+  Calendar,
+  Search,
+  BookOpen
 } from 'lucide-react';
 import { AssetIcon } from '../common/AssetIcon';
 
@@ -26,30 +33,40 @@ export const CatalogView: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   
-  // Data
+  // Lista globală de elevi din școală (pentru dropdown & administrare)
+  const [allStudents, setAllStudents] = useState<User[]>([]);
+  const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>('ALL');
+
+  // Date
   const [grades, setGrades] = useState<GradeEntry[]>([]);
   const [absences, setAbsences] = useState<AbsenceEntry[]>([]);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal / Form state (Profesor)
+  // Modal / Form state (Adăugare Notă)
   const [showAddGrade, setShowAddGrade] = useState(false);
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [targetStudentId, setTargetStudentId] = useState('');
+  const [targetGroupId, setTargetGroupId] = useState('');
   const [gradeValue, setGradeValue] = useState<number>(10);
   const [gradeType, setGradeType] = useState<string>('TEST');
   const [gradeComment, setGradeComment] = useState('');
 
-  // Absence modal
+  // Modal / Form state (Adăugare Absență - cu Materie)
   const [showAddAbsence, setShowAddAbsence] = useState(false);
+  const [absenceStudentId, setAbsenceStudentId] = useState('');
+  const [absenceGroupId, setAbsenceGroupId] = useState('');
   const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Load initial terms and groups
+  const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  // Inițializare trimestre, grupuri și elevi
   useEffect(() => {
     const init = async () => {
       try {
-        const [termsList, groupsList] = await Promise.all([
+        const [termsList, groupsList, studentsList] = await Promise.all([
           apiClient<Term[]>('/api/v1/terms').catch(() => []),
           apiClient<Group[]>('/api/v1/groups').catch(() => []),
+          isTeacherOrAdmin ? apiClient<User[]>('/api/v1/users?role=STUDENT').catch(() => []) : Promise.resolve([]),
         ]);
         setTerms(termsList);
         if (termsList.length > 0) {
@@ -60,55 +77,66 @@ export const CatalogView: React.FC = () => {
         if (groupsList.length > 0) {
           setSelectedGroupId(groupsList[0].id);
         }
+        setAllStudents(studentsList);
       } finally {
         setLoading(false);
       }
     };
     init();
-  }, []);
+  }, [isTeacherOrAdmin]);
 
-  // Fetch grades and absences when selection changes
+  // Încărcare date catalog
   const loadCatalogData = async () => {
     if (!user) return;
     try {
+      const queryTerm = selectedTermId ? `?termId=${selectedTermId}` : '';
       if (user.role === 'STUDENT') {
-        const queryTerm = selectedTermId ? `?termId=${selectedTermId}` : '';
         const [myGrades, myAbsences] = await Promise.all([
           apiClient<GradeEntry[]>(`/api/v1/students/${user.id}/grades${queryTerm}`).catch(() => []),
           apiClient<AbsenceEntry[]>(`/api/v1/students/${user.id}/absences${queryTerm}`).catch(() => []),
         ]);
         setGrades(myGrades);
         setAbsences(myAbsences);
-      } else if (selectedGroupId) {
-        const queryTerm = selectedTermId ? `?termId=${selectedTermId}` : '';
-        const [groupGrades, groupAbsences, members] = await Promise.all([
-          apiClient<GradeEntry[]>(`/api/v1/groups/${selectedGroupId}/grades${queryTerm}`).catch(() => []),
-          apiClient<AbsenceEntry[]>(`/api/v1/groups/${selectedGroupId}/absences${queryTerm}`).catch(() => []),
-          apiClient<GroupMember[]>(`/api/v1/groups/${selectedGroupId}/members`).catch(() => []),
-        ]);
-        setGrades(groupGrades);
-        setAbsences(groupAbsences);
-        setGroupMembers(members.filter((m) => m.membershipRole === 'STUDENT'));
+      } else {
+        // Dacă este ales un elev specific din dropdown
+        if (selectedStudentFilter !== 'ALL') {
+          const [sGrades, sAbsences] = await Promise.all([
+            apiClient<GradeEntry[]>(`/api/v1/students/${selectedStudentFilter}/grades${queryTerm}`).catch(() => []),
+            apiClient<AbsenceEntry[]>(`/api/v1/students/${selectedStudentFilter}/absences${queryTerm}`).catch(() => []),
+          ]);
+          setGrades(sGrades);
+          setAbsences(sAbsences);
+        } else if (selectedGroupId) {
+          const [groupGrades, groupAbsences, members] = await Promise.all([
+            apiClient<GradeEntry[]>(`/api/v1/groups/${selectedGroupId}/grades${queryTerm}`).catch(() => []),
+            apiClient<AbsenceEntry[]>(`/api/v1/groups/${selectedGroupId}/absences${queryTerm}`).catch(() => []),
+            apiClient<GroupMember[]>(`/api/v1/groups/${selectedGroupId}/members`).catch(() => []),
+          ]);
+          setGrades(groupGrades);
+          setAbsences(groupAbsences);
+          setGroupMembers(members.filter((m) => m.membershipRole === 'STUDENT'));
+        }
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error fetching catalog data', e);
     }
   };
 
   useEffect(() => {
     loadCatalogData();
-  }, [selectedGroupId, selectedTermId, user?.role]);
+  }, [selectedGroupId, selectedTermId, selectedStudentFilter, user?.role]);
 
-  // Handlers for Teacher
+  // Handler Adăugare Notă
   const handleCreateGrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGroupId || !selectedStudentId) return;
+    const gId = targetGroupId || selectedGroupId;
+    if (!gId || !targetStudentId) return;
 
     try {
-      await apiClient(`/api/v1/groups/${selectedGroupId}/grades`, {
+      await apiClient(`/api/v1/groups/${gId}/grades`, {
         method: 'POST',
         body: JSON.stringify({
-          studentId: selectedStudentId,
+          studentId: targetStudentId,
           termId: selectedTermId,
           value: Number(gradeValue),
           type: gradeType,
@@ -124,16 +152,32 @@ export const CatalogView: React.FC = () => {
     }
   };
 
+  // Handler Anulare / Ștergere Notă
+  const handleVoidGrade = async (gradeId: string) => {
+    const reason = prompt('Motivul anulării notei:');
+    if (!reason) return;
+    try {
+      await apiClient(`/api/v1/grades/${gradeId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason }),
+      });
+      loadCatalogData();
+    } catch (err: any) {
+      alert(err.message || 'Eroare la anularea notei');
+    }
+  };
+
+  // Handler Adăugare Absență (asociată cu o materie/grup)
   const handleCreateAbsence = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGroupId || !selectedStudentId) return;
+    if (!absenceStudentId) return;
 
     try {
-      await apiClient(`/api/v1/groups/${selectedGroupId}/absences`, {
+      await apiClient('/api/v1/absences', {
         method: 'POST',
         body: JSON.stringify({
-          studentId: selectedStudentId,
-          termId: selectedTermId,
+          studentId: absenceStudentId,
+          groupId: absenceGroupId || undefined,
           date: new Date(absenceDate).toISOString(),
         }),
       });
@@ -144,8 +188,9 @@ export const CatalogView: React.FC = () => {
     }
   };
 
+  // Handler Motivare Absență
   const handleExcuseAbsence = async (absenceId: string) => {
-    const reason = prompt('Motivul scutirii / motivării:');
+    const reason = prompt('Motivul motivării (ex: Scutire medicală):');
     if (!reason) return;
 
     try {
@@ -159,303 +204,216 @@ export const CatalogView: React.FC = () => {
     }
   };
 
-  if (loading) return <div>Se încarcă catalogul...</div>;
+  const handlePrint = () => {
+    window.print();
+  };
 
-  const isStudent = user?.role === 'STUDENT';
-  const averageValue =
-    grades.length > 0
-      ? (grades.reduce((acc, g) => acc + g.value, 0) / grades.length).toFixed(2)
-      : '-';
+  // Calcule statistice
+  const averageGrade = grades.length > 0 
+    ? (grades.reduce((acc, curr) => acc + curr.value, 0) / grades.length).toFixed(2)
+    : '-';
+  const unexcusedCount = absences.filter((a) => a.status === 'UNEXCUSED').length;
+  const excusedCount = absences.filter((a) => a.status === 'EXCUSED').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Header */}
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AssetIcon assetKey="catalog" fallbackIcon={FileSpreadsheet} size={26} style={{ color: 'var(--primary)' }} />
-            Catalog Școlar
-          </h1>
-          <p style={{ color: 'var(--text-muted)' }}>
-            {isStudent
-              ? 'Situația ta școlară: note, teze, medii și absențe'
-              : 'Evidența notelor și a prezenței elevilor'}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ padding: '0.5rem', backgroundColor: '#e0e7ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
+            <AssetIcon assetKey="catalog" fallbackIcon={GraduationCap} size={28} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Catalog Școlar Electronic</h1>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              Situație școlară, note oficiale și monitorizare prezență
+            </p>
+          </div>
         </div>
 
-        {/* Filters bar */}
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          {terms.length > 0 && (
-            <select
-              className="input-field"
-              style={{ width: 'auto' }}
-              value={selectedTermId}
-              onChange={(e) => setSelectedTermId(e.target.value)}
-            >
-              {terms.map((t) => (
-                <option key={t.id} value={t.id}>
-                  Semestrul / Modulul {t.number} ({t.schoolYear})
-                </option>
-              ))}
-            </select>
-          )}
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button className="btn btn-outline" onClick={handlePrint} title="Tipărește situația">
+            <Printer size={16} /> Printează
+          </button>
 
-          {!isStudent && groups.length > 0 && (
-            <select
-              className="input-field"
-              style={{ width: 'auto' }}
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-            >
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+          {/* Selector Trimestru */}
+          <select 
+            className="input" 
+            style={{ width: 'auto', minWidth: '130px' }}
+            value={selectedTermId}
+            onChange={(e) => setSelectedTermId(e.target.value)}
+          >
+            {terms.map((t) => (
+              <option key={t.id} value={t.id}>
+                Modulul {t.number} ({t.status === 'OPEN' ? 'Activ' : 'Închis'})
+              </option>
+            ))}
+          </select>
+
+          {/* Pentru Profesori & Admini: Selector Elev specific sau Grup */}
+          {isTeacherOrAdmin && (
+            <>
+              <select
+                className="input"
+                style={{ width: 'auto', minWidth: '190px' }}
+                value={selectedStudentFilter}
+                onChange={(e) => setSelectedStudentFilter(e.target.value)}
+              >
+                <option value="ALL">Toți elevii (după materie)</option>
+                {allStudents.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    Elev: {s.lastName} {s.firstName}
+                  </option>
+                ))}
+              </select>
+
+              {selectedStudentFilter === 'ALL' && (
+                <select
+                  className="input"
+                  style={{ width: 'auto', minWidth: '170px' }}
+                  value={selectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                >
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  setTargetGroupId(selectedGroupId);
+                  setTargetStudentId(selectedStudentFilter !== 'ALL' ? selectedStudentFilter : (groupMembers[0]?.userId || allStudents[0]?.id || ''));
+                  setShowAddGrade(true);
+                }}
+              >
+                <Plus size={16} /> Adaugă notă
+              </button>
+
+              <button 
+                className="btn btn-outline"
+                style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}
+                onClick={() => {
+                  setAbsenceGroupId(selectedGroupId);
+                  setAbsenceStudentId(selectedStudentFilter !== 'ALL' ? selectedStudentFilter : (groupMembers[0]?.userId || allStudents[0]?.id || ''));
+                  setShowAddAbsence(true);
+                }}
+              >
+                <Plus size={16} /> Pune absență
+              </button>
+            </>
           )}
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '0.5rem', color: 'var(--primary)' }}>
-            <AssetIcon assetKey="grade" fallbackIcon={Award} size={28} />
+            <Award size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Medie Note</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{averageValue}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Media Curentă</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{averageGrade}</div>
           </div>
         </div>
 
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', color: '#16a34a' }}>
-            <GraduationCap size={28} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total Note</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{grades.length}</div>
-          </div>
-        </div>
-
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.5rem', color: '#dc2626' }}>
-            <AlertCircle size={28} />
+        <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ padding: '0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.5rem', color: 'var(--danger)' }}>
+            <AlertCircle size={24} />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Absențe Nemotivate</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-              {absences.filter((a) => a.status === 'UNEXCUSED').length}
-            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--danger)' }}>{unexcusedCount}</div>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '0.5rem', color: '#16a34a' }}>
+            <CheckCircle2 size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Absențe Motivate</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#16a34a' }}>{excusedCount}</div>
           </div>
         </div>
       </div>
 
-      {/* Actions Bar for Teacher */}
-      {!isStudent && (
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-          <button
-            onClick={() => {
-              if (groupMembers.length > 0) setSelectedStudentId(groupMembers[0].userId);
-              setShowAddGrade(true);
-            }}
-            className="btn btn-primary"
-          >
-            <Plus size={16} /> Adaugă Notă
-          </button>
-          <button
-            onClick={() => {
-              if (groupMembers.length > 0) setSelectedStudentId(groupMembers[0].userId);
-              setShowAddAbsence(true);
-            }}
-            className="btn btn-outline"
-          >
-            <Plus size={16} /> Înregistrează Absență
-          </button>
-        </div>
-      )}
-
-      {/* MODAL ADAUGA NOTA */}
-      {showAddGrade && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div className="card" style={{ width: '100%', maxWidth: '440px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '1rem' }}>Adăugare Notă în Catalog</h2>
-            <form onSubmit={handleCreateGrade} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Elev</label>
-                <select
-                  required
-                  className="input-field"
-                  value={selectedStudentId}
-                  onChange={(e) => setSelectedStudentId(e.target.value)}
-                >
-                  {groupMembers.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.user.firstName} {m.user.lastName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Notă (1-10)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    required
-                    className="input-field"
-                    value={gradeValue}
-                    onChange={(e) => setGradeValue(Number(e.target.value))}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Tip Evaluare</label>
-                  <select
-                    className="input-field"
-                    value={gradeType}
-                    onChange={(e) => setGradeType(e.target.value)}
-                  >
-                    <option value="ORAL">Oral</option>
-                    <option value="TEST">Lucrare / Test</option>
-                    <option value="HOMEWORK">Temă</option>
-                    <option value="PROJECT">Proiect</option>
-                    <option value="THESIS">Teză</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Comentariu (opțional)</label>
-                <input
-                  type="text"
-                  placeholder="ex: Răspuns foarte bun la tablă"
-                  className="input-field"
-                  value={gradeComment}
-                  onChange={(e) => setGradeComment(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setShowAddGrade(false)} className="btn btn-outline">Anulează</button>
-                <button type="submit" className="btn btn-primary">Salvează Nota</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL ADAUGA ABSENTA */}
-      {showAddAbsence && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '1rem' }}>Înregistrare Absență</h2>
-            <form onSubmit={handleCreateAbsence} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Elev</label>
-                <select
-                  required
-                  className="input-field"
-                  value={selectedStudentId}
-                  onChange={(e) => setSelectedStudentId(e.target.value)}
-                >
-                  {groupMembers.map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.user.firstName} {m.user.lastName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>Data</label>
-                <input
-                  type="date"
-                  required
-                  className="input-field"
-                  value={absenceDate}
-                  onChange={(e) => setAbsenceDate(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setShowAddAbsence(false)} className="btn btn-outline">Anulează</button>
-                <button type="submit" className="btn btn-primary">Înregistrează</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* SECTION 1: NOTE TABEL */}
-      <div className="card">
-        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Award size={18} color="var(--primary)" /> Note & Evaluări
+      {/* Secțiunea Note */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <FileSpreadsheet size={18} color="var(--primary)" /> Note Înregistrate
         </h2>
+
         {grades.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', padding: '1rem 0' }}>
-            Nu există note înregistrate pentru selecția curentă.
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            Nu sunt note înregistrate pentru filtrul selectat.
           </p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.6rem' }}>Data</th>
-                  {!isStudent && <th style={{ padding: '0.6rem' }}>Elev</th>}
-                  {isStudent && <th style={{ padding: '0.6rem' }}>Materie</th>}
-                  <th style={{ padding: '0.6rem' }}>Tip</th>
-                  <th style={{ padding: '0.6rem' }}>Notă</th>
-                  <th style={{ padding: '0.6rem' }}>Profesor</th>
-                  <th style={{ padding: '0.6rem' }}>Comentariu</th>
+                <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: '#f8fafc' }}>
+                  {isTeacherOrAdmin && <th style={{ padding: '0.75rem' }}>Elev</th>}
+                  <th style={{ padding: '0.75rem' }}>Materie</th>
+                  <th style={{ padding: '0.75rem' }}>Notă</th>
+                  <th style={{ padding: '0.75rem' }}>Tip evaluare</th>
+                  <th style={{ padding: '0.75rem' }}>Data</th>
+                  <th style={{ padding: '0.75rem' }}>Comentariu</th>
+                  {isTeacherOrAdmin && <th style={{ padding: '0.75rem', width: '50px' }}></th>}
                 </tr>
               </thead>
               <tbody>
                 {grades.map((g) => (
                   <tr key={g.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '0.6rem' }}>{new Date(g.gradedAt).toLocaleDateString('ro-RO')}</td>
-                    {!isStudent && (
-                      <td style={{ padding: '0.6rem', fontWeight: 500 }}>
-                        {g.student ? `${g.student.firstName} ${g.student.lastName}` : '-'}
+                    {isTeacherOrAdmin && (
+                      <td style={{ padding: '0.75rem', fontWeight: 500 }}>
+                        {g.student ? `${g.student.lastName} ${g.student.firstName}` : '-'}
                       </td>
                     )}
-                    {isStudent && (
-                      <td style={{ padding: '0.6rem', fontWeight: 500 }}>
-                        {g.group?.name || '-'}
-                      </td>
-                    )}
-                    <td style={{ padding: '0.6rem' }}>
-                      <span className="badge">{g.type}</span>
+                    <td style={{ padding: '0.75rem' }}>
+                      <span className="badge badge-teacher" style={{ fontSize: '0.75rem' }}>
+                        {g.group?.name || 'Materie'}
+                      </span>
                     </td>
-                    <td style={{ padding: '0.6rem' }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '50%',
-                          fontWeight: 700,
-                          backgroundColor: g.value >= 5 ? '#dcfce7' : '#fee2e2',
-                          color: g.value >= 5 ? '#15803d' : '#b91c1c',
-                        }}
-                      >
+                    <td style={{ padding: '0.75rem' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        backgroundColor: g.value >= 5 ? '#eff6ff' : '#fee2e2',
+                        color: g.value >= 5 ? 'var(--primary)' : 'var(--danger)',
+                        fontWeight: 700,
+                      }}>
                         {g.value}
                       </span>
                     </td>
-                    <td style={{ padding: '0.6rem', color: 'var(--text-muted)' }}>
-                      {g.teacher ? `${g.teacher.firstName} ${g.teacher.lastName}` : '-'}
+                    <td style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {g.type}
                     </td>
-                    <td style={{ padding: '0.6rem', color: '#475569' }}>{g.comment || '-'}</td>
+                    <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>
+                      {new Date(g.gradedAt).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {g.comment || '-'}
+                    </td>
+                    {isTeacherOrAdmin && (
+                      <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                        <button
+                          onClick={() => handleVoidGrade(g.id)}
+                          title="Anulează nota"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -464,57 +422,67 @@ export const CatalogView: React.FC = () => {
         )}
       </div>
 
-      {/* SECTION 2: ABSENTE TABEL */}
-      <div className="card">
-        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <AlertCircle size={18} color="#dc2626" /> Absențe
+      {/* Secțiunea Absențe (sortată pe materii) */}
+      <div className="card" style={{ padding: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <AlertCircle size={18} color="var(--danger)" /> Evidență Absențe (Sortată pe Materii)
         </h2>
+
         {absences.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', padding: '1rem 0' }}>
-            Nu sunt absențe înregistrate. Felicitări pentru prezență!
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            Nicio absență înregistrată.
           </p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.6rem' }}>Data</th>
-                  {!isStudent && <th style={{ padding: '0.6rem' }}>Elev</th>}
-                  <th style={{ padding: '0.6rem' }}>Materie / Grup</th>
-                  <th style={{ padding: '0.6rem' }}>Stare</th>
-                  <th style={{ padding: '0.6rem' }}>Motiv</th>
-                  {!isStudent && <th style={{ padding: '0.6rem' }}>Acțiuni</th>}
+                <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: '#f8fafc' }}>
+                  {isTeacherOrAdmin && <th style={{ padding: '0.75rem' }}>Elev</th>}
+                  <th style={{ padding: '0.75rem' }}>Materie / Curs</th>
+                  <th style={{ padding: '0.75rem' }}>Data</th>
+                  <th style={{ padding: '0.75rem' }}>Stare</th>
+                  <th style={{ padding: '0.75rem' }}>Motiv / Detalii</th>
+                  {isTeacherOrAdmin && <th style={{ padding: '0.75rem', width: '100px' }}>Acțiuni</th>}
                 </tr>
               </thead>
               <tbody>
                 {absences.map((a) => (
                   <tr key={a.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '0.6rem' }}>{new Date(a.date).toLocaleDateString('ro-RO')}</td>
-                    {!isStudent && (
-                      <td style={{ padding: '0.6rem', fontWeight: 500 }}>
-                        {a.student ? `${a.student.firstName} ${a.student.lastName}` : '-'}
+                    {isTeacherOrAdmin && (
+                      <td style={{ padding: '0.75rem', fontWeight: 500 }}>
+                        {a.student ? `${a.student.lastName} ${a.student.firstName}` : '-'}
                       </td>
                     )}
-                    <td style={{ padding: '0.6rem' }}>{a.group?.name || 'Toată ziua'}</td>
-                    <td style={{ padding: '0.6rem' }}>
+                    <td style={{ padding: '0.75rem' }}>
+                      <span className="badge badge-student" style={{ fontSize: '0.75rem' }}>
+                        <BookOpen size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                        {a.group?.name || 'General / Nemotivată'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>
+                      {new Date(a.date).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>
                       {a.status === 'EXCUSED' ? (
-                        <span className="badge" style={{ backgroundColor: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <CheckCircle2 size={12} /> Motivată
+                        <span style={{ color: '#16a34a', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 500 }}>
+                          <CheckCircle2 size={14} /> Motivată
                         </span>
                       ) : (
-                        <span className="badge" style={{ backgroundColor: '#fee2e2', color: '#991b1b', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <XCircle size={12} /> Nemotivată
+                        <span style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 500 }}>
+                          <XCircle size={14} /> Nemotivată
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '0.6rem', color: '#475569' }}>{a.excuseReason || '-'}</td>
-                    {!isStudent && (
-                      <td style={{ padding: '0.6rem' }}>
+                    <td style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {a.excuseReason || '-'}
+                    </td>
+                    {isTeacherOrAdmin && (
+                      <td style={{ padding: '0.75rem' }}>
                         {a.status === 'UNEXCUSED' && (
-                          <button
+                          <button 
+                            className="btn btn-outline" 
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                             onClick={() => handleExcuseAbsence(a.id)}
-                            className="btn btn-outline"
-                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                           >
                             Motivează
                           </button>
@@ -528,7 +496,203 @@ export const CatalogView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal Adăugare Notă */}
+      {showAddGrade && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            maxWidth: '420px',
+            width: '90%',
+          }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Adaugă Notă</h2>
+
+            <form onSubmit={handleCreateGrade} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              <div>
+                <label className="label">Materie / Grup</label>
+                <select
+                  className="input"
+                  value={targetGroupId}
+                  onChange={(e) => setTargetGroupId(e.target.value)}
+                  required
+                >
+                  <option value="">Alege materia</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label">Elev</label>
+                <select
+                  className="input"
+                  value={targetStudentId}
+                  onChange={(e) => setTargetStudentId(e.target.value)}
+                  required
+                >
+                  <option value="">Alege elevul</option>
+                  {allStudents.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.lastName} {s.firstName} ({s.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label className="label">Notă (1 - 10)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    className="input"
+                    value={gradeValue}
+                    onChange={(e) => setGradeValue(Number(e.target.value))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Tip Notă</label>
+                  <select
+                    className="input"
+                    value={gradeType}
+                    onChange={(e) => setGradeType(e.target.value)}
+                  >
+                    <option value="TEST">Test scris</option>
+                    <option value="ORAL">Ascultare orală</option>
+                    <option value="HOMEWORK">Temă de casă</option>
+                    <option value="PROJECT">Proiect</option>
+                    <option value="THESIS">Teză</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Comentariu / Notiță (opțional)</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="ex: Răspuns foarte bun la lecție"
+                  value={gradeComment}
+                  onChange={(e) => setGradeComment(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowAddGrade(false)}
+                >
+                  Anulează
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Salvează nota
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Adăugare Absență pe Materie */}
+      {showAddAbsence && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            maxWidth: '420px',
+            width: '90%',
+          }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Înregistrează Absență</h2>
+
+            <form onSubmit={handleCreateAbsence} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              <div>
+                <label className="label">Materie / Disciplină</label>
+                <select
+                  className="input"
+                  value={absenceGroupId}
+                  onChange={(e) => setAbsenceGroupId(e.target.value)}
+                  required
+                >
+                  <option value="">Alege materia</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label">Elev</label>
+                <select
+                  className="input"
+                  value={absenceStudentId}
+                  onChange={(e) => setAbsenceStudentId(e.target.value)}
+                  required
+                >
+                  <option value="">Alege elevul</option>
+                  {allStudents.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.lastName} {s.firstName} ({s.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label">Data absenței</label>
+                <input
+                  type="date"
+                  className="input"
+                  value={absenceDate}
+                  onChange={(e) => setAbsenceDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowAddAbsence(false)}
+                >
+                  Anulează
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ backgroundColor: 'var(--danger)', borderColor: 'var(--danger)' }}>
+                  Înregistrează
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-

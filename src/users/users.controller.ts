@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
@@ -28,6 +29,14 @@ export class UsersController {
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.toPublicUser(user);
+  }
+
+  @Get()
+  list(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('role') role?: string,
+  ) {
+    return this.usersService.list(user, role);
   }
 
   @Patch('me')

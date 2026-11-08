@@ -21,6 +21,7 @@ import { CatalogView } from './catalog/CatalogView';
 import { TimetableView } from './timetable/TimetableView';
 import { ClassesView } from './classes/ClassesView';
 import { SubjectsView } from './subjects/SubjectsView';
+import { ExamsView } from './exams/ExamsView';
 
 export const App: React.FC = () => {
   return (
@@ -47,6 +48,7 @@ export const App: React.FC = () => {
               <Route path="/timetable" element={<TimetableView />} />
               <Route path="/classes" element={<ClassesView />} />
               <Route path="/subjects" element={<SubjectsView />} />
+              <Route path="/exams" element={<ExamsView />} />
 
               {/* Rute exclusiv ADMIN */}
               <Route element={<RequireRole roles={['ADMIN']} />}>

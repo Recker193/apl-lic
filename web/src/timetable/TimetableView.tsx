@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { TimetableEntry, DayOfWeek, SchoolClass, Subject } from '../api/types';
+import { TimetableEntry, DayOfWeek, SchoolClass, Subject, User } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
-import { Clock, Plus, Trash2, Calendar } from 'lucide-react';
+import { Clock, Plus, Trash2, Printer } from 'lucide-react';
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: 'MONDAY', label: 'Luni' },
@@ -30,18 +30,16 @@ export const TimetableView: React.FC = () => {
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [teachers, setTeachers] = useState<User[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  
+  // Modal state
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
-
-  // Form state for adding entry (admin)
-  const [formClassId, setFormClassId] = useState('');
+  const [targetDay, setTargetDay] = useState<DayOfWeek>('MONDAY');
+  const [targetPeriod, setTargetPeriod] = useState<number>(1);
   const [formSubjectId, setFormSubjectId] = useState('');
   const [formTeacherId, setFormTeacherId] = useState('');
-  const [formDay, setFormDay] = useState<DayOfWeek>('MONDAY');
-  const [formPeriod, setFormPeriod] = useState<number>(1);
-  const [formStartTime, setFormStartTime] = useState('08:00');
-  const [formEndTime, setFormEndTime] = useState('08:50');
   const [formRoom, setFormRoom] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -57,11 +55,15 @@ export const TimetableView: React.FC = () => {
           setSelectedClassId(cls[0].id);
         }
         if (isAdmin) {
-          const subs = await apiClient<Subject[]>('/api/v1/subjects');
+          const [subs, usersList] = await Promise.all([
+            apiClient<Subject[]>('/api/v1/subjects').catch(() => []),
+            apiClient<User[]>('/api/v1/users?role=TEACHER').catch(() => []),
+          ]);
           setSubjects(subs);
+          setTeachers(usersList);
         }
       } catch (err) {
-        console.error('Error fetching initial classes/subjects', err);
+        console.error('Error fetching initial data', err);
       }
     };
     initData();
@@ -89,41 +91,45 @@ export const TimetableView: React.FC = () => {
     fetchEntries();
   }, [selectedClassId, isAdmin]);
 
-  const handlePeriodChange = (p: number) => {
-    setFormPeriod(p);
-    if (DEFAULT_HOURS[p]) {
-      setFormStartTime(DEFAULT_HOURS[p].start);
-      setFormEndTime(DEFAULT_HOURS[p].end);
-    }
+  const handleOpenSlot = (day: DayOfWeek, period: number) => {
+    if (!isAdmin) return;
+    setTargetDay(day);
+    setTargetPeriod(period);
+    setFormSubjectId(subjects.length > 0 ? subjects[0].id : '');
+    setFormTeacherId(teachers.length > 0 ? teachers[0].id : '');
+    setFormRoom('');
+    setErrorMsg('');
+    setShowAddModal(true);
   };
 
   const handleCreateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    const hours = DEFAULT_HOURS[targetPeriod] || { start: '08:00', end: '08:50' };
     try {
       await apiClient('/api/v1/timetable', {
         method: 'POST',
         body: JSON.stringify({
-          classId: formClassId || selectedClassId,
+          classId: selectedClassId,
           subjectId: formSubjectId,
           teacherId: formTeacherId,
-          dayOfWeek: formDay,
-          period: Number(formPeriod),
-          startTime: formStartTime,
-          endTime: formEndTime,
+          dayOfWeek: targetDay,
+          period: targetPeriod,
+          startTime: hours.start,
+          endTime: hours.end,
           room: formRoom || undefined,
         }),
       });
       setShowAddModal(false);
-      setFormRoom('');
       fetchEntries();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Eroare la adăugarea orei în orar');
+      setErrorMsg(err.message || 'Eroare la salvarea orei');
     }
   };
 
-  const handleDeleteEntry = async (id: string) => {
-    if (!window.confirm('Sigur doriți să ștergeți această oră?')) return;
+  const handleDeleteEntry = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Sigur doriți să ștergeți această oră din orar?')) return;
     try {
       await apiClient(`/api/v1/timetable/${id}`, { method: 'DELETE' });
       fetchEntries();
@@ -131,6 +137,12 @@ export const TimetableView: React.FC = () => {
       alert(err.message || 'Eroare la ștergerea orei');
     }
   };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const currentClassName = classes.find(c => c.id === selectedClassId)?.name;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -143,36 +155,28 @@ export const TimetableView: React.FC = () => {
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Orar Școlar</h1>
             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              {isAdmin ? 'Vizualizare și administrare orar pe clase' : 'Programul săptămânal al cursurilor'}
+              {isAdmin ? `Administrare orar Clasa ${currentClassName || ''}` : 'Programul săptămânal al cursurilor'}
             </p>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button className="btn btn-outline" onClick={handlePrint} title="Tipărește orarul">
+            <Printer size={16} /> Printează
+          </button>
           {isAdmin && (
-            <>
-              <select
-                className="input"
-                style={{ width: 'auto', minWidth: '180px' }}
-                value={selectedClassId}
-                onChange={(e) => setSelectedClassId(e.target.value)}
-              >
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    Clasa {c.name} ({c.schoolYear})
-                  </option>
-                ))}
-              </select>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setFormClassId(selectedClassId);
-                  setShowAddModal(true);
-                }}
-              >
-                <Plus size={16} /> Adaugă oră
-              </button>
-            </>
+            <select
+              className="input"
+              style={{ width: 'auto', minWidth: '180px' }}
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+            >
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  Clasa {c.name} ({c.schoolYear})
+                </option>
+              ))}
+            </select>
           )}
         </div>
       </div>
@@ -187,7 +191,7 @@ export const TimetableView: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
-                <th style={{ padding: '1rem', width: '100px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>Ora</th>
+                <th style={{ padding: '1rem', width: '110px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>Ora</th>
                 {DAYS.map((d) => (
                   <th key={d.key} style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-main)', fontSize: '0.925rem' }}>
                     {d.label}
@@ -200,26 +204,26 @@ export const TimetableView: React.FC = () => {
                 const hourRange = DEFAULT_HOURS[p] || { start: `0${7+p}:00`, end: `0${7+p}:50` };
                 return (
                   <tr key={p} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '1rem', verticalAlign: 'top', backgroundColor: '#fafbfc' }}>
+                    <td style={{ padding: '0.875rem', verticalAlign: 'middle', backgroundColor: '#fafbfc' }}>
                       <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Ora {p}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{hourRange.start} - {hourRange.end}</div>
                     </td>
                     {DAYS.map((d) => {
                       const entry = entries.find((e) => e.dayOfWeek === d.key && e.period === p);
                       return (
-                        <td key={d.key} style={{ padding: '0.75rem', verticalAlign: 'top', width: '18%' }}>
+                        <td key={d.key} style={{ padding: '0.5rem', verticalAlign: 'top', width: '18%' }}>
                           {entry ? (
                             <div style={{
                               backgroundColor: '#f1f5f9',
                               borderLeft: '4px solid var(--primary)',
                               borderRadius: '0.375rem',
-                              padding: '0.5rem 0.75rem',
+                              padding: '0.5rem 0.625rem',
                               position: 'relative'
                             }}>
                               <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-main)' }}>
                                 {entry.subject?.name || 'Materie'}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                                 Prof. {entry.teacher?.firstName} {entry.teacher?.lastName}
                               </div>
                               {entry.room && (
@@ -229,7 +233,7 @@ export const TimetableView: React.FC = () => {
                               )}
                               {isAdmin && (
                                 <button
-                                  onClick={() => handleDeleteEntry(entry.id)}
+                                  onClick={(ev) => handleDeleteEntry(entry.id, ev)}
                                   title="Șterge oră"
                                   style={{
                                     position: 'absolute',
@@ -246,8 +250,41 @@ export const TimetableView: React.FC = () => {
                                 </button>
                               )}
                             </div>
+                          ) : isAdmin ? (
+                            /* Slot gol cu buton direct de adaugare */
+                            <button
+                              onClick={() => handleOpenSlot(d.key, p)}
+                              style={{
+                                width: '100%',
+                                height: '58px',
+                                border: '1px dashed #cbd5e1',
+                                borderRadius: '0.375rem',
+                                background: 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.35rem',
+                                color: '#94a3b8',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--primary)';
+                                e.currentTarget.style.color = 'var(--primary)';
+                                e.currentTarget.style.backgroundColor = '#eff6ff';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '#cbd5e1';
+                                e.currentTarget.style.color = '#94a3b8';
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                              title={`Adaugă oră: ${d.label}, Ora ${p}`}
+                            >
+                              <Plus size={14} /> Adaugă
+                            </button>
                           ) : (
-                            <div style={{ height: '54px', border: '1px dashed #e2e8f0', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ height: '58px', border: '1px dashed #e2e8f0', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <span style={{ color: '#cbd5e1', fontSize: '0.8rem' }}>-</span>
                             </div>
                           )}
@@ -262,7 +299,7 @@ export const TimetableView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Adăugare Oră (Admin Only) */}
+      {/* Modal Adăugare Oră Directă (Slot preselectat) */}
       {showAddModal && (
         <div style={{
           position: 'fixed',
@@ -280,12 +317,15 @@ export const TimetableView: React.FC = () => {
             backgroundColor: '#fff',
             borderRadius: '0.5rem',
             padding: '1.5rem',
-            maxWidth: '500px',
+            maxWidth: '420px',
             width: '90%',
-            maxHeight: '90vh',
-            overflowY: 'auto',
           }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Adaugă oră în orar</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+              Adaugă oră în orar
+            </h2>
+            <div style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 500, marginBottom: '1rem', backgroundColor: '#eff6ff', padding: '0.5rem 0.75rem', borderRadius: '0.375rem' }}>
+              {DAYS.find(d => d.key === targetDay)?.label} • Ora {targetPeriod} ({DEFAULT_HOURS[targetPeriod]?.start} - {DEFAULT_HOURS[targetPeriod]?.end})
+            </div>
 
             {errorMsg && (
               <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
@@ -294,23 +334,6 @@ export const TimetableView: React.FC = () => {
             )}
 
             <form onSubmit={handleCreateEntry} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              <div>
-                <label className="label">Clasă</label>
-                <select
-                  className="input"
-                  value={formClassId}
-                  onChange={(e) => setFormClassId(e.target.value)}
-                  required
-                >
-                  <option value="">Selectează clasa</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.schoolYear})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div>
                 <label className="label">Materie</label>
                 <select
@@ -329,65 +352,20 @@ export const TimetableView: React.FC = () => {
               </div>
 
               <div>
-                <label className="label">ID Profesor (UUID)</label>
-                <input
-                  type="text"
+                <label className="label">Profesor</label>
+                <select
                   className="input"
-                  placeholder="Introduceți UUID-ul profesorului"
                   value={formTeacherId}
                   onChange={(e) => setFormTeacherId(e.target.value)}
                   required
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label className="label">Ziua săptămânii</label>
-                  <select
-                    className="input"
-                    value={formDay}
-                    onChange={(e) => setFormDay(e.target.value as DayOfWeek)}
-                  >
-                    {DAYS.map((d) => (
-                      <option key={d.key} value={d.key}>{d.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Număr oră (1-7)</label>
-                  <select
-                    className="input"
-                    value={formPeriod}
-                    onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                  >
-                    {PERIODS.map((p) => (
-                      <option key={p} value={p}>Ora {p}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label className="label">Ora început</label>
-                  <input
-                    type="time"
-                    className="input"
-                    value={formStartTime}
-                    onChange={(e) => setFormStartTime(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="label">Ora sfârșit</label>
-                  <input
-                    type="time"
-                    className="input"
-                    value={formEndTime}
-                    onChange={(e) => setFormEndTime(e.target.value)}
-                    required
-                  />
-                </div>
+                >
+                  <option value="">Selectează profesorul</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.firstName} {t.lastName} ({t.email})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -395,7 +373,7 @@ export const TimetableView: React.FC = () => {
                 <input
                   type="text"
                   className="input"
-                  placeholder="ex: Sala 104, Laborator Info"
+                  placeholder="ex: Sala 104, Laborator Chimie"
                   value={formRoom}
                   onChange={(e) => setFormRoom(e.target.value)}
                 />
@@ -410,7 +388,7 @@ export const TimetableView: React.FC = () => {
                   Anulează
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Salvează
+                  Salvează în orar
                 </button>
               </div>
             </form>
@@ -420,4 +398,3 @@ export const TimetableView: React.FC = () => {
     </div>
   );
 };
-

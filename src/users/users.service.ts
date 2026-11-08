@@ -71,4 +71,23 @@ export class UsersService {
     });
     return { id, isActive };
   }
+
+  async list(actor: AuthenticatedUser, role?: string) {
+    const where: any = { schoolId: actor.schoolId };
+    if (role) {
+      where.role = role;
+    }
+    return this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+      },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
+  }
 }

@@ -16,6 +16,20 @@ export class ClassesService {
   async get(user: AuthenticatedUser, id: string) {
     const item = await this.prisma.schoolClass.findFirst({
       where: { id, schoolId: user.schoolId },
+      include: {
+        memberships: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!item) throw new NotFoundException();
     return item;
@@ -41,6 +55,17 @@ export class ClassesService {
       where: { studentId_classId: { studentId, classId: schoolClass.id } },
       update: {},
       create: { studentId, classId: schoolClass.id },
+    });
+  }
+
+  async removeStudent(
+    user: AuthenticatedUser,
+    classId: string,
+    studentId: string,
+  ) {
+    const schoolClass = await this.get(user, classId);
+    return this.prisma.classMembership.deleteMany({
+      where: { classId: schoolClass.id, studentId },
     });
   }
 }

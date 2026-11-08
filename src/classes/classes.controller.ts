@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -60,5 +61,15 @@ export class ClassesController {
     @Body() dto: AddStudentDto,
   ) {
     return this.classesService.addStudent(user, id, dto.studentId);
+  }
+
+  @Delete(':id/students/:studentId')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  removeStudent(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('studentId', ParseUUIDPipe) studentId: string,
+  ) {
+    return this.classesService.removeStudent(user, id, studentId);
   }
 }
