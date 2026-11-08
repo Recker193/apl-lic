@@ -86,6 +86,7 @@ model School {
   conductGrades     ConductGrade[]
   homeroomAssignments HomeroomAssignment[]
   timetableEntries  TimetableEntry[]
+  clubs             Club[]
 }
 
 model User {
@@ -128,6 +129,9 @@ model User {
   termAverages       TermAverage[]
   homeroomAssignments HomeroomAssignment[]
   taughtTimetable    TimetableEntry[]      @relation("TimetableTeacher")
+  coordinatedClubs   Club[]                @relation("ClubCoordinator")
+  clubMemberships    ClubMember[]
+
 
   @@index([schoolId])
   @@index([role])
@@ -617,6 +621,8 @@ enum DayOfWeek {
   WEDNESDAY
   THURSDAY
   FRIDAY
+  SATURDAY
+  SUNDAY
 }
 
 model TimetableEntry {
@@ -626,7 +632,7 @@ model TimetableEntry {
   subjectId  String
   teacherId  String
   dayOfWeek  DayOfWeek
-  period     Int       // 1-7
+  period     Int       // 1-20
   startTime  String    // ex: "08:00"
   endTime    String    // ex: "08:50"
   room       String?   // ex: "Sala 12"
@@ -642,3 +648,54 @@ model TimetableEntry {
   @@index([schoolId])
   @@index([teacherId, dayOfWeek, period])
 }
+
+model Club {
+  id            String    @id @default(uuid())
+  schoolId      String
+  name          String    // ex: "Club de Șah", "Debate Club"
+  description   String?
+  formsUrl      String?   // Link Google Forms pentru înscriere
+  coordinatorId String    // Elev sau Profesor
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  school       School           @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  coordinator  User             @relation("ClubCoordinator", fields: [coordinatorId], references: [id], onDelete: Restrict)
+  members      ClubMember[]
+  meetings     WeekendMeeting[]
+
+  @@index([schoolId])
+  @@index([coordinatorId])
+}
+
+model ClubMember {
+  id        String   @id @default(uuid())
+  clubId    String
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+  @@index([userId])
+}
+
+model WeekendMeeting {
+  id          String    @id @default(uuid())
+  clubId      String
+  title       String    // ex: "Antrenament turneu", "Meci amical"
+  dayOfWeek   DayOfWeek // SATURDAY sau SUNDAY
+  startTime   String    // ex: "10:00"
+  endTime     String    // ex: "13:30" (poate dura oricât)
+  room        String?   // ex: "Amfiteatru" sau "Online"
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+  @@index([dayOfWeek])
+}
+

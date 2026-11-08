@@ -33,6 +33,7 @@ import { StorageModule } from './storage/storage.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { TermsModule } from './terms/terms.module';
 import { TimetableModule } from './timetable/timetable.module';
+import { ClubsModule } from './clubs/clubs.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -68,6 +69,7 @@ import { UsersModule } from './users/users.module';
     TermsModule,
     HomeroomModule,
     TimetableModule,
+    ClubsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

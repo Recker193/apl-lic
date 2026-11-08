@@ -14,6 +14,7 @@ import {
   Clock,
   GraduationCap,
   FileCheck,
+  Compass,
   Sun,
   Moon
 } from 'lucide-react';
@@ -128,6 +129,9 @@ export const Layout: React.FC = () => {
           </Link>
           <Link to="/exams" style={navLinkStyle('/exams')}>
             <FileCheck size={18} /> Teste & Examene
+          </Link>
+          <Link to="/clubs" style={navLinkStyle('/clubs')}>
+            <Compass size={18} /> Cluburi & Activități
           </Link>
           <Link to="/calendar" style={navLinkStyle('/calendar')}>
             <Calendar size={18} /> Calendar

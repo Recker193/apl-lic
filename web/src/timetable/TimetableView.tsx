@@ -1,17 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { TimetableEntry, DayOfWeek, SchoolClass, Subject, User } from '../api/types';
+import { 
+  TimetableEntry, 
+  DayOfWeek, 
+  SchoolClass, 
+  Subject, 
+  User, 
+  WeekendMeeting, 
+  Club 
+} from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
 import { TimeInput24 } from '../common/TimeInput24';
-import { Clock, Plus, Trash2, Printer, Settings2 } from 'lucide-react';
+import { 
+  Clock, 
+  Plus, 
+  Trash2, 
+  Printer, 
+  Settings2, 
+  Compass, 
+  ExternalLink 
+} from 'lucide-react';
 
-const DAYS: { key: DayOfWeek; label: string }[] = [
+const WEEKDAY_KEYS: { key: DayOfWeek; label: string }[] = [
   { key: 'MONDAY', label: 'Luni' },
   { key: 'TUESDAY', label: 'Marți' },
   { key: 'WEDNESDAY', label: 'Miercuri' },
   { key: 'THURSDAY', label: 'Joi' },
   { key: 'FRIDAY', label: 'Vineri' },
+];
+
+const WEEKEND_KEYS: { key: DayOfWeek; label: string }[] = [
+  { key: 'SATURDAY', label: 'Sâmbătă' },
+  { key: 'SUNDAY', label: 'Duminică' },
 ];
 
 export interface PeriodSlot {
@@ -44,6 +65,8 @@ const DEFAULT_AFTERNOON_SLOTS: PeriodSlot[] = [
 export const TimetableView: React.FC = () => {
   const { user } = useAuth();
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const [weekendMeetings, setWeekendMeetings] = useState<WeekendMeeting[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<User[]>([]);
@@ -56,7 +79,7 @@ export const TimetableView: React.FC = () => {
     return saved ? JSON.parse(saved) : DEFAULT_MORNING_SLOTS;
   });
 
-  // Modal adăugare / modificare oră din chenar
+  // Modal adăugare / modificare oră săptămână (Luni-Vineri)
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [targetDay, setTargetDay] = useState<DayOfWeek>('MONDAY');
   const [targetPeriod, setTargetPeriod] = useState<number>(1);
@@ -67,17 +90,43 @@ export const TimetableView: React.FC = () => {
   const [formRoom, setFormRoom] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Ref-uri pentru auto-jump la ora de sfârșit
-  const modalEndHourRef = React.useRef<HTMLInputElement>(null);
-  const configEndHourRef = React.useRef<HTMLInputElement>(null);
+  // Modal adăugare întâlnire de Weekend (Club)
+  const [showWeekendModal, setShowWeekendModal] = useState<boolean>(false);
+  const [weekendClubId, setWeekendClubId] = useState('');
+  const [weekendTitle, setWeekendTitle] = useState('');
+  const [weekendDay, setWeekendDay] = useState<DayOfWeek>('SATURDAY');
+  const [weekendStartTime, setWeekendStartTime] = useState('10:00');
+  const [weekendEndTime, setWeekendEndTime] = useState('12:30');
+  const [weekendRoom, setWeekendRoom] = useState('');
+  const [weekendDesc, setWeekendDesc] = useState('');
 
-  // Modal configurare intervale / adăugare oră nouă de curs în schemă (ex: dimineața vs după-amiaza)
+  // Modal configurare intervale / schimburi
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [newSlotLabel, setNewSlotLabel] = useState('');
   const [newSlotStart, setNewSlotStart] = useState('07:30');
   const [newSlotEnd, setNewSlotEnd] = useState('08:20');
 
+  // Ref-uri pentru auto-jump la ora de sfârșit
+  const modalEndHourRef = React.useRef<HTMLInputElement>(null);
+  const weekendEndHourRef = React.useRef<HTMLInputElement>(null);
+  const configEndHourRef = React.useRef<HTMLInputElement>(null);
+
   const isAdmin = user?.role === 'ADMIN';
+  const isTeacher = user?.role === 'TEACHER';
+  const isStudent = user?.role === 'STUDENT';
+
+  // Verifică dacă utilizatorul coordonează vreun club
+  const coordinatedClubs = clubs.filter(
+    (c) => c.coordinatorId === user?.id || isAdmin,
+  );
+  const isClubCoordinator = coordinatedClubs.length > 0;
+
+  // Profesorii simpli NU văd weekendul elevilor (doar dacă sunt coordonatori sau admin)
+  const showWeekendColumns = !isTeacher || isClubCoordinator || isAdmin;
+
+  const displayDays = showWeekendColumns
+    ? [...WEEKDAY_KEYS, ...WEEKEND_KEYS]
+    : WEEKDAY_KEYS;
 
   // Load slots per class when class changes
   useEffect(() => {
@@ -87,7 +136,6 @@ export const TimetableView: React.FC = () => {
     if (saved) {
       setCustomSlots(JSON.parse(saved));
     } else {
-      // Daca nu exista specific, preluam cel global sau dimineata
       const global = localStorage.getItem('hssa_slots_global');
       setCustomSlots(global ? JSON.parse(global) : DEFAULT_MORNING_SLOTS);
     }
@@ -105,10 +153,17 @@ export const TimetableView: React.FC = () => {
   useEffect(() => {
     const initData = async () => {
       try {
-        const cls = await apiClient<SchoolClass[]>('/api/v1/classes');
+        const [cls, allClubs] = await Promise.all([
+          apiClient<SchoolClass[]>('/api/v1/classes'),
+          apiClient<Club[]>('/api/v1/clubs').catch(() => []),
+        ]);
         setClasses(cls);
+        setClubs(allClubs);
         if (cls.length > 0 && !selectedClassId) {
           setSelectedClassId(cls[0].id);
+        }
+        if (allClubs.length > 0) {
+          setWeekendClubId(allClubs[0].id);
         }
         if (isAdmin) {
           const [subs, usersList] = await Promise.all([
@@ -125,17 +180,21 @@ export const TimetableView: React.FC = () => {
     initData();
   }, [isAdmin]);
 
-  // Load entries
+  // Load timetable entries & weekend meetings
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      if (isAdmin && selectedClassId) {
-        const data = await apiClient<TimetableEntry[]>(`/api/v1/timetable/class/${selectedClassId}`);
-        setEntries(data);
-      } else {
-        const data = await apiClient<TimetableEntry[]>('/api/v1/timetable/me');
-        setEntries(data);
-      }
+      const pEntries = (isAdmin && selectedClassId)
+        ? apiClient<TimetableEntry[]>(`/api/v1/timetable/class/${selectedClassId}`)
+        : apiClient<TimetableEntry[]>('/api/v1/timetable/me');
+
+      const pWeekend = showWeekendColumns
+        ? apiClient<WeekendMeeting[]>('/api/v1/clubs/weekend-schedule').catch(() => [])
+        : Promise.resolve([]);
+
+      const [dataEntries, dataWeekend] = await Promise.all([pEntries, pWeekend]);
+      setEntries(dataEntries);
+      setWeekendMeetings(dataWeekend);
     } catch (err) {
       console.error('Failed to load timetable entries', err);
     } finally {
@@ -145,10 +204,28 @@ export const TimetableView: React.FC = () => {
 
   useEffect(() => {
     fetchEntries();
-  }, [selectedClassId, isAdmin]);
+  }, [selectedClassId, isAdmin, showWeekendColumns]);
 
-  // Click pe un slot gol
+  // Deschidere slot orar din tabel
   const handleOpenSlot = (day: DayOfWeek, slot: PeriodSlot) => {
+    // Dacă e weekend (Sâmbătă/Duminică), deschide modalul de întâlnire Club
+    if (day === 'SATURDAY' || day === 'SUNDAY') {
+      if (!isClubCoordinator) {
+        alert('Doar coordonatorii de club pot adăuga întâlniri în weekend.');
+        return;
+      }
+      setWeekendDay(day);
+      setWeekendStartTime(slot.start);
+      setWeekendEndTime(slot.end);
+      setWeekendTitle('');
+      setWeekendRoom('');
+      setWeekendDesc('');
+      setErrorMsg('');
+      setShowWeekendModal(true);
+      return;
+    }
+
+    // Dacă e Luni-Vineri, deschide modalul de oră de curs
     if (!isAdmin) return;
     setTargetDay(day);
     setTargetPeriod(slot.period);
@@ -161,6 +238,7 @@ export const TimetableView: React.FC = () => {
     setShowAddModal(true);
   };
 
+  // Salvare oră Luni-Vineri
   const handleCreateEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -185,6 +263,33 @@ export const TimetableView: React.FC = () => {
     }
   };
 
+  // Salvare întâlnire weekend (Club)
+  const handleCreateWeekendMeeting = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    if (!weekendClubId) {
+      setErrorMsg('Trebuie să selectați un club.');
+      return;
+    }
+    try {
+      await apiClient(`/api/v1/clubs/${weekendClubId}/meetings`, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: weekendTitle,
+          dayOfWeek: weekendDay,
+          startTime: weekendStartTime,
+          endTime: weekendEndTime,
+          room: weekendRoom || undefined,
+          description: weekendDesc || undefined,
+        }),
+      });
+      setShowWeekendModal(false);
+      fetchEntries();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Eroare la programarea întâlnirii de club');
+    }
+  };
+
   const handleDeleteEntry = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!window.confirm('Sigur doriți să ștergeți această oră din orar?')) return;
@@ -196,7 +301,18 @@ export const TimetableView: React.FC = () => {
     }
   };
 
-  // Administrare intervale orare (Add/Remove or Shift preset)
+  const handleDeleteWeekendMeeting = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Sigur doriți să anulați această întâlnire de club?')) return;
+    try {
+      await apiClient(`/api/v1/clubs/meetings/${id}`, { method: 'DELETE' });
+      fetchEntries();
+    } catch (err: any) {
+      alert(err.message || 'Eroare la anularea întâlnirii');
+    }
+  };
+
+  // Intervale configurabile
   const handleAddSlot = (e: React.FormEvent) => {
     e.preventDefault();
     const nextPeriod = customSlots.length > 0 ? Math.max(...customSlots.map(s => s.period)) + 1 : 1;
@@ -238,11 +354,11 @@ export const TimetableView: React.FC = () => {
             <AssetIcon assetKey="timetable" fallbackIcon={Clock} size={28} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Orar Școlar Flexibil</h1>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Orar Școlar & Activități</h1>
             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
               {isAdmin 
-                ? `Administrare orar Clasa ${currentClassName || ''} (Dimineața / După-amiaza configurabil)` 
-                : 'Programul săptămânal al cursurilor'}
+                ? `Administrare orar Clasa ${currentClassName || ''} și activități de club` 
+                : 'Programul săptămânal al cursurilor și cluburilor de weekend'}
             </p>
           </div>
         </div>
@@ -252,12 +368,25 @@ export const TimetableView: React.FC = () => {
             <Printer size={16} /> Printează
           </button>
 
+          {isClubCoordinator && (
+            <button 
+              className="btn btn-outline"
+              style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+              onClick={() => {
+                setWeekendDay('SATURDAY');
+                setShowWeekendModal(true);
+              }}
+            >
+              <Plus size={16} /> Programează Club Weekend
+            </button>
+          )}
+
           {isAdmin && (
             <>
               <button 
                 className="btn btn-outline" 
                 onClick={() => setShowConfigModal(true)}
-                title="Configurează intervalele orare ale clasei (7:30 - 20:30, schimburi)"
+                title="Configurează intervalele orare ale clasei"
               >
                 <Settings2 size={16} /> Setare Intervale & Schimb
               </button>
@@ -279,36 +408,165 @@ export const TimetableView: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid Timetable Dinamic */}
+      {/* Grid Timetable Dinamic Luni - Vineri + Sâmbătă & Duminică */}
       {loading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
           Se încarcă orarul...
         </div>
       ) : (
         <div style={{ overflowX: 'auto', backgroundColor: 'var(--bg-card)', borderRadius: '0.75rem', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: showWeekendColumns ? '950px' : '700px' }}>
             <thead>
               <tr style={{ backgroundColor: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
-                <th style={{ padding: '1rem', width: '130px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.875rem' }}>Interval</th>
-                {DAYS.map((d) => (
-                  <th key={d.key} style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-main)', fontSize: '0.925rem' }}>
-                    {d.label}
-                  </th>
-                ))}
+                <th style={{ padding: '0.875rem', width: '120px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Interval</th>
+                {displayDays.map((d) => {
+                  const isWeekend = d.key === 'SATURDAY' || d.key === 'SUNDAY';
+                  return (
+                    <th 
+                      key={d.key} 
+                      style={{ 
+                        padding: '0.875rem', 
+                        fontWeight: 600, 
+                        color: isWeekend ? '#8b5cf6' : 'var(--text-main)', 
+                        fontSize: '0.9rem',
+                        backgroundColor: isWeekend ? 'rgba(139, 92, 246, 0.05)' : 'transparent',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        {isWeekend && <Compass size={14} color="#8b5cf6" />}
+                        <span>{d.label}</span>
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {customSlots.map((slot) => {
                 return (
                   <tr key={slot.period} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '0.875rem', verticalAlign: 'middle', backgroundColor: 'var(--bg-main)' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{slot.label}</div>
+                    <td style={{ padding: '0.75rem', verticalAlign: 'middle', backgroundColor: 'var(--bg-main)' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{slot.label}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{slot.start} - {slot.end}</div>
                     </td>
-                    {DAYS.map((d) => {
+
+                    {displayDays.map((d) => {
+                      const isWeekend = d.key === 'SATURDAY' || d.key === 'SUNDAY';
+
+                      if (isWeekend) {
+                        // Caută întâlniri de weekend pentru ziua respectivă
+                        const meeting = weekendMeetings.find((m) => {
+                          if (m.dayOfWeek !== d.key) return false;
+                          // Verifică suprapunerea de timp cu slotul curent
+                          return m.startTime <= slot.start && m.endTime >= slot.end;
+                        });
+
+                        return (
+                          <td 
+                            key={d.key} 
+                            style={{ 
+                              padding: '0.5rem', 
+                              verticalAlign: 'top', 
+                              backgroundColor: 'rgba(139, 92, 246, 0.02)',
+                            }}
+                          >
+                            {meeting ? (
+                              <div style={{
+                                backgroundColor: '#f5f3ff',
+                                borderLeft: '4px solid #8b5cf6',
+                                borderRadius: '0.375rem',
+                                padding: '0.5rem 0.625rem',
+                                position: 'relative',
+                              }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#5b21b6' }}>
+                                  {meeting.club?.name || 'Club'}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 500, marginTop: '0.15rem' }}>
+                                  {meeting.title}
+                                </div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                                  {meeting.startTime} - {meeting.endTime} {meeting.room ? `• ${meeting.room}` : ''}
+                                </div>
+
+                                {meeting.club?.formsUrl && (
+                                  <a
+                                    href={meeting.club.formsUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.25rem',
+                                      fontSize: '0.7rem',
+                                      color: '#7c3aed',
+                                      marginTop: '0.35rem',
+                                      textDecoration: 'underline',
+                                    }}
+                                  >
+                                    <ExternalLink size={11} /> Înscriere Formular
+                                  </a>
+                                )}
+
+                                {(isAdmin || meeting.club?.coordinatorId === user?.id) && (
+                                  <button
+                                    onClick={(ev) => handleDeleteWeekendMeeting(meeting.id, ev)}
+                                    title="Anulează întâlnirea de club"
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0.35rem',
+                                      right: '0.35rem',
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      color: 'var(--danger)',
+                                      opacity: 0.7,
+                                    }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </div>
+                            ) : isClubCoordinator ? (
+                              <button
+                                onClick={() => handleOpenSlot(d.key, slot)}
+                                style={{
+                                  width: '100%',
+                                  height: '58px',
+                                  border: '1px dashed #c4b5fd',
+                                  borderRadius: '0.375rem',
+                                  background: 'transparent',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '0.35rem',
+                                  color: '#8b5cf6',
+                                  cursor: 'pointer',
+                                  fontSize: '0.75rem',
+                                  transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#f5f3ff';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                                title={`Adaugă activitate de club: ${d.label}`}
+                              >
+                                <Plus size={13} /> Club
+                              </button>
+                            ) : (
+                              <div style={{ height: '58px', border: '1px dashed var(--border)', borderRadius: '0.375rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>-</span>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      }
+
+                      // Zilele Luni - Vineri (Ore de curs clasice)
                       const entry = entries.find((e) => e.dayOfWeek === d.key && e.period === slot.period);
                       return (
-                        <td key={d.key} style={{ padding: '0.5rem', verticalAlign: 'top', width: '18%' }}>
+                        <td key={d.key} style={{ padding: '0.5rem', verticalAlign: 'top' }}>
                           {entry ? (
                             <div style={{
                               backgroundColor: 'var(--bg-subtle)',
@@ -317,13 +575,13 @@ export const TimetableView: React.FC = () => {
                               padding: '0.5rem 0.625rem',
                               position: 'relative'
                             }}>
-                              <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-main)' }}>
+                              <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)' }}>
                                 {entry.subject?.name || 'Materie'}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                                 Prof. {entry.teacher?.firstName} {entry.teacher?.lastName}
                               </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.2rem' }}>
                                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                                   {entry.startTime} - {entry.endTime}
                                 </span>
@@ -380,7 +638,7 @@ export const TimetableView: React.FC = () => {
                                 e.currentTarget.style.color = 'var(--text-muted)';
                                 e.currentTarget.style.backgroundColor = 'transparent';
                               }}
-                              title={`Adaugă oră: ${d.label}, ${slot.label} (${slot.start} - ${slot.end})`}
+                              title={`Adaugă oră: ${d.label}, ${slot.label}`}
                             >
                               <Plus size={14} /> Adaugă
                             </button>
@@ -400,7 +658,7 @@ export const TimetableView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Adăugare Oră în Chenar */}
+      {/* Modal Adăugare Oră Curs (Luni-Vineri) */}
       {showAddModal && (
         <div style={{
           position: 'fixed',
@@ -425,7 +683,7 @@ export const TimetableView: React.FC = () => {
               Adaugă oră în orar
             </h2>
             <div style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 500, marginBottom: '1rem', backgroundColor: 'var(--bg-hover)', padding: '0.5rem 0.75rem', borderRadius: '0.375rem' }}>
-              {DAYS.find(d => d.key === targetDay)?.label} • Ora {targetPeriod}
+              {WEEKDAY_KEYS.find(d => d.key === targetDay)?.label} • Ora {targetPeriod}
             </div>
 
             {errorMsg && (
@@ -517,7 +775,131 @@ export const TimetableView: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Configurare Intervale & Schimb (Dimineață / După-amiază) */}
+      {/* Modal Programare Întâlnire Club Weekend */}
+      {showWeekendModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            backgroundColor: 'var(--bg-card)',
+            borderRadius: '0.5rem',
+            padding: '1.5rem',
+            maxWidth: '460px',
+            width: '90%',
+          }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Compass size={20} color="#8b5cf6" /> Programează Întâlnire Club Weekend
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Întâlnirile pot dura oricât (ex: 10:00 - 14:00) și sunt vizibile pe Sâmbătă / Duminică.
+            </p>
+
+            {errorMsg && (
+              <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateWeekendMeeting} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              <div>
+                <label className="label">Club</label>
+                <select
+                  className="input"
+                  value={weekendClubId}
+                  onChange={(e) => setWeekendClubId(e.target.value)}
+                  required
+                >
+                  <option value="">Alege clubul pe care îl coordonezi</option>
+                  {coordinatedClubs.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label">Titlu activitate / sesiune</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="ex: Meci de antrenament, Ședință Debate"
+                  value={weekendTitle}
+                  onChange={(e) => setWeekendTitle(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="label">Ziua</label>
+                <select
+                  className="input"
+                  value={weekendDay}
+                  onChange={(e) => setWeekendDay(e.target.value as DayOfWeek)}
+                >
+                  <option value="SATURDAY">Sâmbătă</option>
+                  <option value="SUNDAY">Duminică</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label className="label">Început (24h)</label>
+                  <TimeInput24
+                    value={weekendStartTime}
+                    onChange={setWeekendStartTime}
+                    onComplete={() => {
+                      weekendEndHourRef.current?.focus();
+                      weekendEndHourRef.current?.select();
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="label">Sfârșit (24h)</label>
+                  <TimeInput24
+                    value={weekendEndTime}
+                    onChange={setWeekendEndTime}
+                    hourInputRef={weekendEndHourRef}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Sală / Locație (opțional)</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="ex: Sala Festivă, Amfiteatru sau Google Meet"
+                  value={weekendRoom}
+                  onChange={(e) => setWeekendRoom(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowWeekendModal(false)}
+                >
+                  Anulează
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' }}>
+                  Programează
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Configurare Intervale & Schimb */}
       {showConfigModal && (
         <div style={{
           position: 'fixed',
@@ -551,7 +933,6 @@ export const TimetableView: React.FC = () => {
               </p>
             </div>
 
-            {/* Presets rapide */}
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button 
                 type="button" 
@@ -571,7 +952,6 @@ export const TimetableView: React.FC = () => {
               </button>
             </div>
 
-            {/* Lista orelor curente din tabel */}
             <div style={{ overflowY: 'auto', maxHeight: '240px', border: '1px solid var(--border)', borderRadius: '0.5rem' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
@@ -604,7 +984,6 @@ export const TimetableView: React.FC = () => {
               </table>
             </div>
 
-            {/* Adăugare slot nou personalizat */}
             <form onSubmit={handleAddSlot} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', backgroundColor: 'var(--bg-main)', padding: '0.875rem', borderRadius: '0.5rem' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Adaugă un rând de oră personalizat:</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1.5fr auto', gap: '0.5rem', alignItems: 'end' }}>

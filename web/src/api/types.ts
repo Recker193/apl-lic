@@ -149,7 +149,61 @@ export interface Subject {
   createdAt?: string;
 }
 
-export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
+export type DayOfWeek = 
+  | 'MONDAY' 
+  | 'TUESDAY' 
+  | 'WEDNESDAY' 
+  | 'THURSDAY' 
+  | 'FRIDAY' 
+  | 'SATURDAY' 
+  | 'SUNDAY';
+
+export interface WeekendMeeting {
+  id: string;
+  clubId: string;
+  title: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  room?: string;
+  description?: string;
+  club?: {
+    id: string;
+    name: string;
+    formsUrl?: string;
+    coordinatorId: string;
+  };
+}
+
+export interface ClubMember {
+  id: string;
+  clubId: string;
+  userId: string;
+  joinedAt: string;
+  user?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export interface Club {
+  id: string;
+  name: string;
+  description?: string;
+  formsUrl?: string;
+  coordinatorId: string;
+  coordinator?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: UserRole;
+  };
+  members?: ClubMember[];
+  meetings?: WeekendMeeting[];
+}
 
 
 export interface TimetableEntry {
