@@ -31,13 +31,13 @@ const DEFAULT_MORNING_SLOTS: PeriodSlot[] = [
 ];
 
 const DEFAULT_AFTERNOON_SLOTS: PeriodSlot[] = [
-  { period: 1, label: 'Ora 1 (D.A.)', start: '13:00', end: '13:50' },
-  { period: 2, label: 'Ora 2 (D.A.)', start: '14:00', end: '14:50' },
-  { period: 3, label: 'Ora 3 (D.A.)', start: '15:00', end: '15:50' },
-  { period: 4, label: 'Ora 4 (D.A.)', start: '16:00', end: '16:50' },
-  { period: 5, label: 'Ora 5 (D.A.)', start: '17:00', end: '17:50' },
-  { period: 6, label: 'Ora 6 (D.A.)', start: '18:00', end: '18:50' },
-  { period: 7, label: 'Ora 7 (D.A.)', start: '19:00', end: '19:50' },
+  { period: 1, label: 'Ora 1 (După-amiază)', start: '13:00', end: '13:50' },
+  { period: 2, label: 'Ora 2 (După-amiază)', start: '14:00', end: '14:50' },
+  { period: 3, label: 'Ora 3 (După-amiază)', start: '15:00', end: '15:50' },
+  { period: 4, label: 'Ora 4 (După-amiază)', start: '16:00', end: '16:50' },
+  { period: 5, label: 'Ora 5 (După-amiază)', start: '17:00', end: '17:50' },
+  { period: 6, label: 'Ora 6 (După-amiază)', start: '18:00', end: '18:50' },
+  { period: 7, label: 'Ora 7 (După-amiază)', start: '19:00', end: '19:50' },
 ];
 
 export const TimetableView: React.FC = () => {

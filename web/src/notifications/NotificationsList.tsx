@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
 import { NotificationItem } from '../api/types';
+import { formatDateTime24 } from '../common/dateUtils';
 import { Check } from 'lucide-react';
 
 export const NotificationsList: React.FC = () => {
@@ -80,7 +81,7 @@ export const NotificationsList: React.FC = () => {
                 <h3 style={{ fontSize: '1rem', fontWeight: n.readAt ? 500 : 700 }}>{n.title}</h3>
                 <p style={{ fontSize: '0.875rem', color: '#334155', marginTop: '0.25rem' }}>{n.message}</p>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', display: 'block' }}>
-                  {new Date(n.createdAt).toLocaleString()}
+                  {formatDateTime24(n.createdAt)}
                 </span>
               </div>
 

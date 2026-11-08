@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Exam, Group } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
+import { formatDateTime24 } from '../common/dateUtils';
 import { Calendar as CalendarIcon, Clock, Plus, Trash2, Search, BookOpen, AlertCircle } from 'lucide-react';
 
 export const ExamsView: React.FC = () => {
@@ -156,7 +157,7 @@ export const ExamsView: React.FC = () => {
 
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.8rem', color: '#b91c1c', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <Clock size={14} /> {new Date(ex.scheduledAt).toLocaleString()}
+                  <Clock size={14} /> {formatDateTime24(ex.scheduledAt)}
                 </span>
                 <span className="badge badge-student" style={{ fontSize: '0.75rem' }}>
                   Programat

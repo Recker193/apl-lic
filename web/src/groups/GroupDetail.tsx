@@ -10,6 +10,7 @@ import {
   Exam, 
   Material 
 } from '../api/types';
+import { formatDateTime24 } from '../common/dateUtils';
 import { 
   Megaphone, 
   FileText, 
@@ -464,7 +465,7 @@ export const GroupDetail: React.FC = () => {
                   <div>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{as.title}</h3>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Termen limită: {new Date(as.dueAt).toLocaleString()}
+                      Termen limită: {formatDateTime24(as.dueAt)}
                     </p>
                   </div>
 
@@ -557,7 +558,7 @@ export const GroupDetail: React.FC = () => {
                   </span>
                 </div>
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0.25rem 0' }}>
-                  Data: {new Date(ex.scheduledAt).toLocaleString()}
+                  Data: {formatDateTime24(ex.scheduledAt)}
                 </p>
                 {ex.description && <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>{ex.description}</p>}
               </div>

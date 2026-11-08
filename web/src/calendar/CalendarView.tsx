@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
+import { formatDateTime24 } from '../common/dateUtils';
 import { Calendar as CalendarIcon, Clock, BookOpen } from 'lucide-react';
 
 interface CalendarData {
@@ -56,7 +57,7 @@ export const CalendarView: React.FC = () => {
                 <div key={ex.id} style={{ padding: '0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.375rem' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ex.title}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-                    <Clock size={12} /> {new Date(ex.scheduledAt).toLocaleString()}
+                    <Clock size={12} /> {formatDateTime24(ex.scheduledAt)}
                   </div>
                 </div>
               ))}
@@ -77,7 +78,7 @@ export const CalendarView: React.FC = () => {
                 <div key={as.id} style={{ padding: '0.75rem', backgroundColor: '#fffbeb', borderRadius: '0.375rem' }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{as.title}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
-                    <Clock size={12} /> Predare: {new Date(as.dueAt).toLocaleString()}
+                    <Clock size={12} /> Predare: {formatDateTime24(as.dueAt)}
                   </div>
                 </div>
               ))}
