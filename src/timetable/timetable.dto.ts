@@ -28,7 +28,7 @@ export class CreateTimetableEntryDto {
 
   @IsInt()
   @Min(1)
-  @Max(10)
+  @Max(20)
   period!: number;
 
   @IsString()
