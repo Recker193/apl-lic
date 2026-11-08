@@ -3,7 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { TimetableEntry, DayOfWeek, SchoolClass, Subject, User } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
-import { TimePicker24 } from '../common/TimePicker24';
+import { TimeInput24 } from '../common/TimeInput24';
 import { Clock, Plus, Trash2, Printer, Settings2 } from 'lucide-react';
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
@@ -66,6 +66,10 @@ export const TimetableView: React.FC = () => {
   const [formTeacherId, setFormTeacherId] = useState('');
   const [formRoom, setFormRoom] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Ref-uri pentru auto-jump la ora de sfârșit
+  const modalEndHourRef = React.useRef<HTMLInputElement>(null);
+  const configEndHourRef = React.useRef<HTMLInputElement>(null);
 
   // Modal configurare intervale / adăugare oră nouă de curs în schemă (ex: dimineața vs după-amiaza)
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
@@ -466,16 +470,21 @@ export const TimetableView: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label className="label">Ora început (24h)</label>
-                  <TimePicker24
+                  <TimeInput24
                     value={formStartTime}
                     onChange={setFormStartTime}
+                    onComplete={() => {
+                      modalEndHourRef.current?.focus();
+                      modalEndHourRef.current?.select();
+                    }}
                   />
                 </div>
                 <div>
                   <label className="label">Ora sfârșit (24h)</label>
-                  <TimePicker24
+                  <TimeInput24
                     value={formEndTime}
                     onChange={setFormEndTime}
+                    hourInputRef={modalEndHourRef}
                   />
                 </div>
               </div>
@@ -611,16 +620,21 @@ export const TimetableView: React.FC = () => {
                 </div>
                 <div>
                   <label className="label" style={{ fontSize: '0.75rem' }}>Început (24h)</label>
-                  <TimePicker24
+                  <TimeInput24
                     value={newSlotStart}
                     onChange={setNewSlotStart}
+                    onComplete={() => {
+                      configEndHourRef.current?.focus();
+                      configEndHourRef.current?.select();
+                    }}
                   />
                 </div>
                 <div>
                   <label className="label" style={{ fontSize: '0.75rem' }}>Sfârșit (24h)</label>
-                  <TimePicker24
+                  <TimeInput24
                     value={newSlotEnd}
                     onChange={setNewSlotEnd}
+                    hourInputRef={configEndHourRef}
                   />
                 </div>
                 <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 0.75rem' }}>
