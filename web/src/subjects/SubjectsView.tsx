@@ -4,9 +4,11 @@ import { useAuth } from '../auth/AuthContext';
 import { Subject } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
 import { BookOpen, Plus, Search, BookMarked } from 'lucide-react';
+import { useMobile } from '../common/useMobile';
 
 export const SubjectsView: React.FC = () => {
   const { user } = useAuth();
+  const isMobile = useMobile();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -102,6 +104,28 @@ export const SubjectsView: React.FC = () => {
       ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
           Nu a fost găsită nicio materie.
+        </div>
+      ) : isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {filtered.map((s) => (
+            <div key={s.id} className="mobile-subject-card">
+              <div className="mobile-subject-info">
+                <h3 className="mobile-subject-title">{s.name}</h3>
+                <p className="mobile-subject-teacher">
+                  Profesor titular asignat
+                </p>
+              </div>
+
+              <div className="mobile-subject-actions">
+                <button type="button" className="mobile-subject-action-btn" title="Mesaje" aria-label="Mesaje">
+                  <img src="/action-chat.png" alt="Mesaje" className="mobile-subject-action-icon" />
+                </button>
+                <button type="button" className="mobile-subject-action-btn" title="Dosare" aria-label="Dosare">
+                  <img src="/action-files.png" alt="Dosare" className="mobile-subject-action-icon" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>

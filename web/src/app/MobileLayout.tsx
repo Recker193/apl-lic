@@ -27,15 +27,15 @@ import {
 
 /* ─────────────────────────────────────────────
    Tab-urile afișate în bara de jos — 6 taburi
-   (iconuri mai mari, aliniate cu imaginile de referință)
+   Iconuri din template-ul vizual mobil + fallback
 ───────────────────────────────────────────── */
 const BOTTOM_TABS = [
-  { path: '/', icon: Home, label: 'Acasă' },
-  { path: '/groups', icon: BookOpen, label: 'Materii' },
-  { path: '/timetable', icon: Clock, label: 'Orar' },
-  { path: '/catalog', icon: GraduationCap, label: 'Catalog' },
-  { path: '/clubs', icon: Compass, label: 'Cluburi' },
-  { path: '/profile', icon: User, label: 'Profil' },
+  { path: '/', icon: Home, image: '/tab-home.png', label: 'Acasă' },
+  { path: '/groups', icon: BookOpen, image: '/tab-materii.png', label: 'Materii' },
+  { path: '/timetable', icon: Clock, image: '/tab-orar.png', label: 'Orar' },
+  { path: '/catalog', icon: GraduationCap, image: '/tab-catalog.png', label: 'Catalog' },
+  { path: '/clubs', icon: Compass, image: '/tab-cluburi.png', label: 'Cluburi' },
+  { path: '/profile', icon: User, image: '/tab-profil.png', label: 'Profil' },
 ];
 
 /* ─────────────────────────────────────────────
@@ -118,16 +118,16 @@ export const MobileLayout: React.FC = () => {
 
   return (
     <div className="mobile-layout">
-      {/* ── Header mobil cu logo caracatiță și nume Oktapod ── */}
+      {/* ── Header mobil cu logo caracatiță și nume liceu stilizat ── */}
       <header className="mobile-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', zIndex: 2 }}>
           <img
             src="/logo.png"
             alt="Oktapod"
-            style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+            style={{ width: '26px', height: '26px', objectFit: 'contain' }}
           />
           <span style={{
-            fontSize: '1.05rem',
+            fontSize: '0.95rem',
             fontWeight: 800,
             color: 'var(--mobile-school-color)',
             letterSpacing: '-0.02em',
@@ -136,14 +136,21 @@ export const MobileLayout: React.FC = () => {
           </span>
         </div>
 
-        <div className="mobile-header-school">
-          {schoolName || ''}
+        {/* Numele liceului centrat pe două rânduri — verde, font serios ca în template */}
+        <div className="mobile-header-school-center">
+          <span className="mobile-header-school-line1">
+            {schoolName ? schoolName.split('Tudor')[0]?.trim() || schoolName : 'Colegiul Național de Informatică'}
+          </span>
+          <span className="mobile-header-school-line2">
+            {schoolName && schoolName.includes('Tudor') ? 'Tudor Vianu' : (schoolName ? '' : 'Tudor Vianu')}
+          </span>
         </div>
 
         <button
           className="mobile-icon-btn mobile-header-menu-btn"
           onClick={() => setDrawerOpen(true)}
           aria-label="Deschide meniu"
+          style={{ zIndex: 2 }}
         >
           {unreadCount > 0 && (
             <span className="mobile-header-notif-dot" />
@@ -159,12 +166,24 @@ export const MobileLayout: React.FC = () => {
 
       {/* ── Bottom Tab Bar ── */}
       <nav className="mobile-tab-bar">
-        {BOTTOM_TABS.map(({ path, icon: Icon, label }) => {
+        {BOTTOM_TABS.map(({ path, icon: Icon, image, label }) => {
           const active = isActive(path);
           return (
             <Link key={path} to={path} className={`mobile-tab${active ? ' mobile-tab--active' : ''}`}>
               <span className="mobile-tab-icon-wrap">
-                <Icon size={24} strokeWidth={active ? 2.5 : 1.8} />
+                {image ? (
+                  <img
+                    src={image}
+                    alt={label}
+                    className="mobile-tab-custom-icon"
+                    onError={(e) => {
+                      // Fallback la LucideIcon dacă imaginea nu se încarcă
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Icon size={24} strokeWidth={active ? 2.5 : 1.8} />
+                )}
               </span>
               <span className="mobile-tab-label">{label}</span>
             </Link>

@@ -3,15 +3,18 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { apiClient } from '../api/client';
 import { Group, SchoolClass, Subject } from '../api/types';
-import { BookOpen, Plus } from 'lucide-react';
+import { BookOpen, Plus, Search } from 'lucide-react';
+import { useMobile } from '../common/useMobile';
 
 export const GroupsList: React.FC = () => {
   const { user } = useAuth();
+  const isMobile = useMobile();
   const [groups, setGroups] = useState<Group[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Form state
   const [name, setName] = useState('');
@@ -61,21 +64,54 @@ export const GroupsList: React.FC = () => {
     }
   };
 
+  const filteredGroups = groups.filter((g) =>
+    g.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
   if (loading) return <div>Se încarcă grupurile...</div>;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '1.25rem' : '1.5rem' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Grupurile mele</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Materiile și grupurile de studiu la care aveți acces</p>
+          <h1 className={isMobile ? 'mobile-page-title' : ''} style={!isMobile ? { fontSize: '1.5rem', fontWeight: 700 } : {}}>
+            Materii
+          </h1>
+          {!isMobile && (
+            <p style={{ color: 'var(--text-muted)' }}>Materiile și grupurile de studiu la care aveți acces</p>
+          )}
         </div>
 
         {(user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
           <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-            <Plus size={16} /> Grup nou
+            <Plus size={16} /> {isMobile ? 'Grup' : 'Grup nou'}
           </button>
         )}
+      </div>
+
+      {/* Căutare tip mobil (ca în imagine: Caută materii, lecții...) */}
+      <div className="mobile-search-bar-wrap">
+        <div style={{ position: 'relative', width: '100%' }}>
+          <Search
+            size={18}
+            style={{
+              position: 'absolute',
+              left: '1.1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#8c939d',
+              pointerEvents: 'none',
+            }}
+          />
+          <input
+            type="text"
+            className="mobile-search-input"
+            placeholder="Caută materii, lecții..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       {showCreateModal && (
@@ -151,39 +187,59 @@ export const GroupsList: React.FC = () => {
         </div>
       )}
 
-      {groups.length === 0 ? (
+      {/* Lista de materii / grupuri */}
+      {filteredGroups.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <p style={{ color: 'var(--text-muted)' }}>Nu sunteți înscris în niciun grup de materie în acest moment.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
-          {groups.map((group) => (
-            <Link
-              key={group.id}
-              to={`/groups/${group.id}`}
-              className="card"
-              style={{
-                textDecoration: 'none',
-                color: 'inherit',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'transform 0.1s ease',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <BookOpen size={20} color="var(--primary)" />
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{group.name}</h3>
-                </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Creat la: {new Date(group.createdAt).toLocaleDateString()}
+        /* Grid responsive unitar cu noul design (stil mobil & desktop modern) */
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+          gap: '1rem',
+        }}>
+          {filteredGroups.map((group) => (
+            <div key={group.id} className="mobile-subject-card">
+              <Link
+                to={`/groups/${group.id}`}
+                className="mobile-subject-info"
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <h3 className="mobile-subject-title">{group.name}</h3>
+                <p className="mobile-subject-teacher">
+                  Prof. titular asociat
                 </p>
+              </Link>
+
+              <div className="mobile-subject-actions">
+                <Link
+                  to={`/groups/${group.id}`}
+                  className="mobile-subject-action-btn"
+                  title="Discuții & Mesaje"
+                  aria-label="Mesaje"
+                >
+                  <img
+                    src="/action-chat.png"
+                    alt="Mesaje"
+                    className="mobile-subject-action-icon"
+                  />
+                </Link>
+
+                <Link
+                  to={`/groups/${group.id}`}
+                  className="mobile-subject-action-btn"
+                  title="Materiale & Dosare"
+                  aria-label="Dosare"
+                >
+                  <img
+                    src="/action-files.png"
+                    alt="Dosare"
+                    className="mobile-subject-action-icon"
+                  />
+                </Link>
               </div>
-              <div style={{ marginTop: '1rem', alignSelf: 'flex-end', fontSize: '0.875rem', color: 'var(--primary)', fontWeight: 500 }}>
-                Deschide grupul &rarr;
-              </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

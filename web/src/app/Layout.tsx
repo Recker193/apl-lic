@@ -127,19 +127,24 @@ export const Layout: React.FC = () => {
             Meniu Principal
           </div>
           <Link to="/" className={`desktop-nav-link ${isActive('/') ? 'desktop-nav-link--active' : ''}`}>
-            <Home size={18} /> <span>Acasă</span>
+            <img src="/tab-home.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <span>Acasă</span>
           </Link>
           <Link to="/groups" className={`desktop-nav-link ${isActive('/groups') ? 'desktop-nav-link--active' : ''}`}>
-            <BookOpen size={18} /> <span>Materii & Grupuri</span>
+            <img src="/tab-materii.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <span>Materii & Grupuri</span>
           </Link>
           <Link to="/timetable" className={`desktop-nav-link ${isActive('/timetable') ? 'desktop-nav-link--active' : ''}`}>
-            <Clock size={18} /> <span>Orar Școlar</span>
+            <img src="/tab-orar.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <span>Orar Școlar</span>
           </Link>
           <Link to="/catalog" className={`desktop-nav-link ${isActive('/catalog') ? 'desktop-nav-link--active' : ''}`}>
-            <GraduationCap size={18} /> <span>Catalog Electronic</span>
+            <img src="/tab-catalog.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <span>Catalog Electronic</span>
           </Link>
           <Link to="/clubs" className={`desktop-nav-link ${isActive('/clubs') ? 'desktop-nav-link--active' : ''}`}>
-            <Compass size={18} /> <span>Cluburi & Activități</span>
+            <img src="/tab-cluburi.png" alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+            <span>Cluburi & Activități</span>
           </Link>
           <Link to="/news" className={`desktop-nav-link ${isActive('/news') ? 'desktop-nav-link--active' : ''}`}>
             <MessageSquare size={18} /> <span>Noutăți & Social Hub</span>

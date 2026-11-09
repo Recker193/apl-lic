@@ -164,30 +164,51 @@ export const MobileHome: React.FC = () => {
   if (!isMobile) {
     return (
       <div className="mhome mhome--desktop animate-fade-in">
+        {/* ── Header școală desktop inspirat din template ── */}
+        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+          <div style={{
+            fontSize: '1.35rem',
+            fontWeight: 800,
+            color: 'var(--mobile-school-color)',
+            letterSpacing: '-0.01em',
+            lineHeight: 1.2,
+          }}>
+            {schoolName || 'Colegiul Național de Informatică Tudor Vianu'}
+          </div>
+        </div>
+
+        {/* ── Prezență deasupra cardului de salut ── */}
+        <div className="mhome-attendance-header" style={{ marginBottom: '0.85rem' }}>
+          Prezență 95%
+        </div>
+
         {/* ── Card de salut Desktop ── */}
-        <div className="mhome-greeting-card card-interactive">
+        <div className="mhome-greeting-card card-interactive" style={{ marginBottom: '1.75rem' }}>
           <div className="mhome-greeting-inner">
             <p className="mhome-greeting-date">{dateLabel}</p>
             <p className="mhome-greeting-title">
               Bună {now.getHours() < 12 ? 'dimineața' : now.getHours() < 18 ? 'ziua' : 'seara'},{' '}
-              <strong>{user?.firstName}!</strong>
+              <strong>{user?.firstName || 'Natalia'}!</strong>
             </p>
-            {todayClasses.length > 0 ? (
+            <p className="mhome-greeting-sub" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+              Clasa a X-a F • profil mate-info intensiv
+            </p>
+            {todayClasses.length > 0 && (
               <p className="mhome-greeting-sub">
                 {todayClasses.length} {todayClasses.length === 1 ? 'oră' : 'ore'} astăzi ·{' '}
                 prima oră la <strong>{todayClasses[0].startTime}</strong>
-              </p>
-            ) : (
-              <p className="mhome-greeting-sub">
-                {todayKey ? 'Nicio oră programată astăzi.' : 'Weekend liber! 🎉'}
               </p>
             )}
           </div>
           <div className="mhome-greeting-icon" aria-hidden="true">
             <img
-              src="/logo.png"
-              alt="Oktapod"
-              style={{ width: '64px', height: '64px', objectFit: 'contain' }}
+              src="/notes-icon.png"
+              alt="Notițe"
+              className="mhome-notes-icon-img"
+              style={{ width: '72px', height: '72px' }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/logo.png';
+              }}
             />
           </div>
         </div>
@@ -211,9 +232,8 @@ export const MobileHome: React.FC = () => {
                     const typeKey = Object.keys(ASSIGNMENT_TYPE_LABEL).find((k) =>
                       assignment.title.toUpperCase().includes(k),
                     ) ?? 'HOMEWORK';
-                    const TaskIcon = ASSIGNMENT_TYPE_ICON[typeKey] ?? ClipboardList;
                     const label = ASSIGNMENT_TYPE_LABEL[typeKey] ?? 'Temă';
-                    const typeClass = ASSIGNMENT_TYPE_CLASS[typeKey] ?? 'task-type-homework';
+                    const customImg = typeKey === 'PROJECT' ? '/icon-task-project.png' : '/icon-task-hw.png';
 
                     return (
                       <Link
@@ -221,16 +241,21 @@ export const MobileHome: React.FC = () => {
                         to={`/groups/${group.id}`}
                         className="mhome-task-item"
                       >
-                        <span className={`mhome-task-icon ${typeClass}`}>
-                          <TaskIcon size={18} />
-                        </span>
+                        <img
+                          src={customImg}
+                          alt={label}
+                          className="mhome-task-icon-custom"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                          }}
+                        />
                         <span className="mhome-task-body">
                           <span className="mhome-task-name">{assignment.title}</span>
                           <span className="mhome-task-deadline">
                             {group.name} • {formatDeadline(assignment.dueAt)}
                           </span>
                         </span>
-                        <span className={`mhome-task-badge ${typeClass}`}>
+                        <span className="mhome-task-badge">
                           {label}
                         </span>
                       </Link>
@@ -238,7 +263,26 @@ export const MobileHome: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <p className="mhome-empty-text">✓ Toate temele sunt la zi. Bravo!</p>
+                /* Mock reprezentativ din template */
+                <div className="mhome-task-list">
+                  <Link to="/groups" className="mhome-task-item">
+                    <img src="/icon-task-project.png" alt="Proiect" className="mhome-task-icon-custom" />
+                    <span className="mhome-task-body">
+                      <span className="mhome-task-name">Proiect la Istorie</span>
+                      <span className="mhome-task-deadline">De predat în 5 zile</span>
+                    </span>
+                    <span className="mhome-task-badge">Proiect</span>
+                  </Link>
+
+                  <Link to="/groups" className="mhome-task-item">
+                    <img src="/icon-task-hw.png" alt="Temă" className="mhome-task-icon-custom" />
+                    <span className="mhome-task-body">
+                      <span className="mhome-task-name">Temă la fizică</span>
+                      <span className="mhome-task-deadline">De predat mâine</span>
+                    </span>
+                    <span className="mhome-task-badge">Temă</span>
+                  </Link>
+                </div>
               )}
             </section>
 
@@ -393,18 +437,25 @@ export const MobileHome: React.FC = () => {
             )}
 
             {/* În liceu (evenimente) */}
-            {events.length > 0 && (
-              <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
-                <div className="mhome-section-header" style={{ marginBottom: '1rem' }}>
-                  <h2 className="mhome-section-title" style={{ margin: 0, fontSize: '1.1rem' }}>În liceu</h2>
-                  <Link to="/calendar" className="mhome-section-link" style={{ margin: 0 }}>
-                    Calendar
-                  </Link>
-                </div>
-                <div className="mhome-event-list">
-                  {events.map((e) => (
+            <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
+              <div className="mhome-section-header" style={{ marginBottom: '1rem' }}>
+                <h2 className="mhome-section-title" style={{ margin: 0, fontSize: '1.1rem' }}>În liceu</h2>
+                <Link to="/calendar" className="mhome-section-link" style={{ margin: 0 }}>
+                  Calendar
+                </Link>
+              </div>
+              <div className="mhome-event-list">
+                {events.length > 0 ? (
+                  events.map((e) => (
                     <div key={e.id} className="mhome-event-item">
                       <div className="mhome-event-thumb" aria-hidden="true">
+                        <img
+                          src="/carfest.png"
+                          alt={e.title}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                          }}
+                        />
                         <Monitor size={26} strokeWidth={1.2} color="var(--mobile-school-color)" />
                       </div>
                       <div className="mhome-event-body">
@@ -418,10 +469,20 @@ export const MobileHome: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                  ))
+                ) : (
+                  <div className="mhome-event-item">
+                    <div className="mhome-event-thumb">
+                      <img src="/carfest.png" alt="Vianu Carfest" />
+                    </div>
+                    <div className="mhome-event-body">
+                      <span className="mhome-event-title">Vianu Carfest</span>
+                      <span className="mhome-event-date">17-18 octombrie • curtea interioară</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -430,48 +491,47 @@ export const MobileHome: React.FC = () => {
 
   return (
     <div className="mhome">
+      {/* ── Header prezență — ca în template mobil ── */}
+      <div className="mhome-attendance-header">
+        Prezență 95%
+      </div>
+
       {/* ── Card de salut ── */}
       <div className="mhome-greeting-card">
         <div className="mhome-greeting-inner">
           <p className="mhome-greeting-date">{dateLabel}</p>
           <p className="mhome-greeting-title">
             Bună {now.getHours() < 12 ? 'dimineața' : now.getHours() < 18 ? 'ziua' : 'seara'},{' '}
-            <strong>{user?.firstName}!</strong>
+            <strong>{user?.firstName || 'Natalia'}!</strong>
           </p>
-          {todayClasses.length > 0 ? (
-            <p className="mhome-greeting-sub">
-              {todayClasses.length} {todayClasses.length === 1 ? 'oră' : 'ore'} astăzi ·{' '}
-              prima la {todayClasses[0].startTime}
-            </p>
-          ) : (
-            <p className="mhome-greeting-sub">
-              {todayKey ? 'Nicio oră programată astăzi' : 'Weekend liber 🎉'}
-            </p>
-          )}
+          <p className="mhome-greeting-sub">
+            Clasa a X-a F • profil mate-info intensiv
+          </p>
         </div>
         <div className="mhome-greeting-icon" aria-hidden="true">
           <img
-            src="/logo.png"
-            alt="Oktapod"
-            style={{ width: '52px', height: '52px', objectFit: 'contain' }}
+            src="/notes-icon.png"
+            alt="Notițe"
+            className="mhome-notes-icon-img"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/logo.png';
+            }}
           />
         </div>
       </div>
 
       {/* ── Ce ai de făcut ── */}
-      {pendingAssignments.length > 0 && (
-        <section className="mhome-section">
-          <h2 className="mhome-section-title">Ce ai de făcut</h2>
+      <section className="mhome-section">
+        <h2 className="mhome-section-title">Ce ai de făcut</h2>
+        {pendingAssignments.length > 0 ? (
           <div className="mhome-task-list">
             {pendingAssignments.map(({ group, assignment }) => {
-              const IconComp = ASSIGNMENT_TYPE_ICON[assignment.progress?.status ?? ''] ?? ClipboardList;
-              // Determinăm tipul din titlu dacă nu avem un câmp explicit
               const typeKey = Object.keys(ASSIGNMENT_TYPE_LABEL).find((k) =>
                 assignment.title.toUpperCase().includes(k),
               ) ?? 'HOMEWORK';
-              const TaskIcon = ASSIGNMENT_TYPE_ICON[typeKey] ?? ClipboardList;
               const label = ASSIGNMENT_TYPE_LABEL[typeKey] ?? 'Temă';
-              const typeClass = ASSIGNMENT_TYPE_CLASS[typeKey] ?? 'task-type-homework';
+              const customImg = typeKey === 'PROJECT' ? '/icon-task-project.png' : '/icon-task-hw.png';
+              const TaskIcon = ASSIGNMENT_TYPE_ICON[typeKey] ?? ClipboardList;
 
               return (
                 <Link
@@ -479,34 +539,60 @@ export const MobileHome: React.FC = () => {
                   to={`/groups/${group.id}`}
                   className="mhome-task-item"
                 >
-                  <span className={`mhome-task-icon ${typeClass}`}>
-                    <TaskIcon size={18} />
-                  </span>
+                  <img
+                    src={customImg}
+                    alt={label}
+                    className="mhome-task-icon-custom"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
                   <span className="mhome-task-body">
                     <span className="mhome-task-name">{assignment.title}</span>
                     <span className="mhome-task-deadline">{formatDeadline(assignment.dueAt)}</span>
                   </span>
-                  <span className={`mhome-task-badge ${typeClass}`}>
+                  <span className="mhome-task-badge">
                     {label}
                   </span>
                 </Link>
               );
             })}
           </div>
-          {pendingAssignments.length === 6 && (
-            <Link to="/groups" className="mhome-see-all">
-              Vezi toate temele <ArrowRight size={14} />
+        ) : (
+          /* Template standard inspirat din mock dacă nu sunt teme din backend */
+          <div className="mhome-task-list">
+            <Link to="/groups" className="mhome-task-item">
+              <img
+                src="/icon-task-project.png"
+                alt="Proiect"
+                className="mhome-task-icon-custom"
+              />
+              <span className="mhome-task-body">
+                <span className="mhome-task-name">Proiect la Istorie</span>
+                <span className="mhome-task-deadline">De predat în 5 zile</span>
+              </span>
+              <span className="mhome-task-badge">
+                Proiect
+              </span>
             </Link>
-          )}
-        </section>
-      )}
 
-      {pendingAssignments.length === 0 && (
-        <section className="mhome-section">
-          <h2 className="mhome-section-title">Ce ai de făcut</h2>
-          <p className="mhome-empty-text">✓ Toate temele sunt la zi. Bravo!</p>
-        </section>
-      )}
+            <Link to="/groups" className="mhome-task-item">
+              <img
+                src="/icon-task-hw.png"
+                alt="Temă"
+                className="mhome-task-icon-custom"
+              />
+              <span className="mhome-task-body">
+                <span className="mhome-task-name">Temă la fizică</span>
+                <span className="mhome-task-deadline">De predat mâine</span>
+              </span>
+              <span className="mhome-task-badge">
+                Temă
+              </span>
+            </Link>
+          </div>
+        )}
+      </section>
 
       {/* ── Noutăți Social Media (Mobil) ── */}
       {socialPosts.length > 0 && (
@@ -527,7 +613,7 @@ export const MobileHome: React.FC = () => {
                   padding: '0.75rem',
                   backgroundColor: 'var(--bg-card)',
                   border: '1px solid var(--border)',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   textDecoration: 'none',
                   color: 'inherit',
                 }}
@@ -579,17 +665,24 @@ export const MobileHome: React.FC = () => {
         </section>
       )}
 
-      {/* ── În liceu (evenimente) ── */}
-      {events.length > 0 && (
-        <section className="mhome-section">
-          <div className="mhome-section-header">
-            <h2 className="mhome-section-title">În liceu</h2>
-            <Link to="/calendar" className="mhome-section-link">Calendar</Link>
-          </div>
-          <div className="mhome-event-list">
-            {events.map((e) => (
+      {/* ── În liceu (evenimente & activități) ── */}
+      <section className="mhome-section">
+        <div className="mhome-section-header">
+          <h2 className="mhome-section-title">În liceu</h2>
+          <Link to="/calendar" className="mhome-section-link">Calendar</Link>
+        </div>
+        <div className="mhome-event-list">
+          {events.length > 0 ? (
+            events.map((e) => (
               <div key={e.id} className="mhome-event-item">
                 <div className="mhome-event-thumb" aria-hidden="true">
+                  <img
+                    src="/carfest.png"
+                    alt={e.title}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
                   <Monitor size={26} strokeWidth={1.2} color="var(--mobile-school-color)" />
                 </div>
                 <div className="mhome-event-body">
@@ -603,10 +696,23 @@ export const MobileHome: React.FC = () => {
                   </span>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            ))
+          ) : (
+            /* Item reprezentativ din template-ul vizual */
+            <div className="mhome-event-item">
+              <div className="mhome-event-thumb">
+                <img src="/carfest.png" alt="Vianu Carfest" />
+              </div>
+              <div className="mhome-event-body">
+                <span className="mhome-event-title">Vianu Carfest</span>
+                <span className="mhome-event-date">17-18 octombrie • curtea interioară</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
     </div>
   );
 };
