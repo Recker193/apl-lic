@@ -44,14 +44,21 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '420px' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', textAlign: 'center' }}>
-          Finalizare înregistrare
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-          Configurați datele contului pe baza invitației primite
-        </p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'var(--bg-main)' }}>
+      <div className="card card-interactive animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+          <img
+            src="/logo.png"
+            alt="Oktapod Logo"
+            style={{ width: '50px', height: '50px', objectFit: 'contain' }}
+          />
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, textAlign: 'center', color: 'var(--primary)' }}>
+            Oktapod
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0, textAlign: 'center' }}>
+            Finalizare înregistrare cont pe baza invitației
+          </p>
+        </div>
 
         {success ? (
           <div style={{ padding: '1rem', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '0.375rem', textAlign: 'center' }}>

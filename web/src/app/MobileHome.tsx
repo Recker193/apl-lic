@@ -18,8 +18,11 @@ import {
   ArrowRight,
   CheckSquare,
   FileText,
+  MessageSquare,
 } from 'lucide-react';
 import { useMobile } from '../common/useMobile';
+import { SocialFeedService } from '../common/SocialFeedService';
+import { SocialFeedPost } from '../api/types';
 import { Home as DesktopHome } from './Home';
 
 const DAY_KEYS: DayOfWeek[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
@@ -73,6 +76,7 @@ export const MobileHome: React.FC = () => {
   const [pendingAssignments, setPendingAssignments] = useState<
     { group: Group; assignment: Assignment }[]
   >([]);
+  const [socialPosts, setSocialPosts] = useState<SocialFeedPost[]>([]);
   const [schoolName, setSchoolName] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -101,6 +105,7 @@ export const MobileHome: React.FC = () => {
         setGroups(gList);
         setEvents(eList.slice(0, 3));
         setNotifications(nList.filter((n) => !n.readAt).slice(0, 3));
+        setSocialPosts(SocialFeedService.getPosts().slice(0, 2));
 
         if (todayKey) {
           setTodayClasses(
@@ -179,7 +184,11 @@ export const MobileHome: React.FC = () => {
             )}
           </div>
           <div className="mhome-greeting-icon" aria-hidden="true">
-            <Monitor size={54} strokeWidth={1.2} color="var(--mobile-school-color)" />
+            <img
+              src="/logo.png"
+              alt="Oktapod"
+              style={{ width: '64px', height: '64px', objectFit: 'contain' }}
+            />
           </div>
         </div>
 
@@ -329,6 +338,60 @@ export const MobileHome: React.FC = () => {
               )}
             </section>
 
+            {/* Noutăți Social Media (Discord / WhatsApp / IG) */}
+            {socialPosts.length > 0 && (
+              <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
+                <div className="mhome-section-header" style={{ marginBottom: '1rem' }}>
+                  <h2 className="mhome-section-title" style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <MessageSquare size={18} color="var(--primary)" /> Noutăți Cluburi & Social Media
+                  </h2>
+                  <Link to="/news" className="mhome-section-link" style={{ margin: 0 }}>
+                    Toate știrile <ArrowRight size={14} />
+                  </Link>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {socialPosts.map((sp) => (
+                    <Link
+                      key={sp.id}
+                      to="/news"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.25rem',
+                        padding: '0.65rem 0.85rem',
+                        backgroundColor: 'var(--bg-subtle)',
+                        borderRadius: '0.5rem',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: sp.channel === 'DISCORD' ? '#5865f2' : sp.channel === 'WHATSAPP' ? '#25d366' : '#e1306c',
+                          color: '#fff',
+                        }}>
+                          {sp.channel}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {new Date(sp.createdAt).toLocaleDateString('ro-RO')}
+                        </span>
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-main)', marginTop: '0.2rem' }}>
+                        {sp.title}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {sp.content}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* În liceu (evenimente) */}
             {events.length > 0 && (
               <section className="mhome-section card card-interactive" style={{ margin: 0, padding: '1.25rem' }}>
@@ -387,7 +450,11 @@ export const MobileHome: React.FC = () => {
           )}
         </div>
         <div className="mhome-greeting-icon" aria-hidden="true">
-          <Monitor size={44} strokeWidth={1.2} color="var(--mobile-school-color)" />
+          <img
+            src="/logo.png"
+            alt="Oktapod"
+            style={{ width: '52px', height: '52px', objectFit: 'contain' }}
+          />
         </div>
       </div>
 
@@ -438,6 +505,54 @@ export const MobileHome: React.FC = () => {
         <section className="mhome-section">
           <h2 className="mhome-section-title">Ce ai de făcut</h2>
           <p className="mhome-empty-text">✓ Toate temele sunt la zi. Bravo!</p>
+        </section>
+      )}
+
+      {/* ── Noutăți Social Media (Mobil) ── */}
+      {socialPosts.length > 0 && (
+        <section className="mhome-section">
+          <div className="mhome-section-header">
+            <h2 className="mhome-section-title">Noutăți & Social Hub</h2>
+            <Link to="/news" className="mhome-section-link">Vezi toate</Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {socialPosts.map((sp) => (
+              <Link
+                key={sp.id}
+                to="/news"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.2rem',
+                  padding: '0.75rem',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    padding: '1px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: sp.channel === 'DISCORD' ? '#5865f2' : sp.channel === 'WHATSAPP' ? '#25d366' : '#e1306c',
+                    color: '#fff',
+                  }}>
+                    {sp.channel}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {new Date(sp.createdAt).toLocaleDateString('ro-RO')}
+                  </span>
+                </div>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-main)', marginTop: '0.2rem' }}>
+                  {sp.title}
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 

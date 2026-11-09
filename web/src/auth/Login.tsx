@@ -32,17 +32,24 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', textAlign: 'center' }}>
-          Autentificare HSSA
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-          Introduceți contul școlar pentru a continua
-        </p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'var(--bg-main)' }}>
+      <div className="card card-interactive animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          <img
+            src="/logo.png"
+            alt="Oktapod Logo"
+            style={{ width: '56px', height: '56px', objectFit: 'contain' }}
+          />
+          <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: 0, textAlign: 'center', color: 'var(--primary)' }}>
+            Oktapod
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0, textAlign: 'center' }}>
+            Autentificare în contul tău școlar
+          </p>
+        </div>
 
         {error && (
-          <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '0.375rem', marginBottom: '1rem', fontSize: '0.875rem' }}>
+          <div className="alert-error" style={{ marginBottom: '1rem' }}>
             {error}
           </div>
         )}

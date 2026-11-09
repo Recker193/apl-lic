@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
+import { ThemeProvider } from './common/ThemeContext';
 import { RequireAuth, RequireRole } from './app/RouteGuards';
 import { Layout } from './app/Layout';
 import { MobileLayout } from './app/MobileLayout';
@@ -25,6 +26,7 @@ import { ClassesView } from './classes/ClassesView';
 import { SubjectsView } from './subjects/SubjectsView';
 import { ExamsView } from './exams/ExamsView';
 import { ClubsView } from './clubs/ClubsView';
+import { NewsHubView } from './news/NewsHubView';
 
 /**
  * Alege layout-ul potrivit în funcție de dimensiunea ecranului.
@@ -45,8 +47,9 @@ const HomeRoute: React.FC = () => <MobileHome />;
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
           {/* Rute publice de autentificare */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -69,6 +72,7 @@ export const App: React.FC = () => {
               <Route path="/subjects" element={<SubjectsView />} />
               <Route path="/exams" element={<ExamsView />} />
               <Route path="/clubs" element={<ClubsView />} />
+              <Route path="/news" element={<NewsHubView />} />
 
               {/* Rute exclusiv ADMIN */}
               <Route element={<RequireRole roles={['ADMIN']} />}>
@@ -81,7 +85,8 @@ export const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
-    </BrowserRouter>
+    </ThemeProvider>
+  </BrowserRouter>
   );
 };
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useTheme } from '../common/ThemeContext';
+import { AccentColorPicker } from '../common/AccentColorPicker';
 import { apiClient } from '../api/client';
 import {
   Home,
@@ -15,6 +17,7 @@ import {
   List,
   FileCheck,
   Compass,
+  MessageSquare,
   Sun,
   Moon,
   Menu,
@@ -48,6 +51,7 @@ const NAV_SECTIONS = [
       { path: '/groups', icon: BookOpen, label: 'Grupurile mele' },
       { path: '/exams', icon: FileCheck, label: 'Teste & Examene' },
       { path: '/clubs', icon: Compass, label: 'Cluburi & Activități' },
+      { path: '/news', icon: MessageSquare, label: 'Noutăți & Social Hub' },
       { path: '/calendar', icon: Calendar, label: 'Calendar' },
       { path: '/notifications', icon: Bell, label: 'Notificări' },
     ],
@@ -75,24 +79,11 @@ const NAV_SECTIONS = [
 
 export const MobileLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [schoolName, setSchoolName] = useState<string>('');
-
-  // Dark Mode
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(
-    () => localStorage.getItem('hssa_theme') === 'dark',
-  );
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('hssa_theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('hssa_theme', 'light');
-    }
-  }, [isDarkMode]);
 
   // Polling notificări
   useEffect(() => {
@@ -115,7 +106,7 @@ export const MobileLayout: React.FC = () => {
     if (!user) return;
     apiClient<{ name: string }>('/api/v1/admin/school')
       .then((s) => setSchoolName(s.name))
-      .catch(() => setSchoolName('HSSA Portal'));
+      .catch(() => setSchoolName('Oktapod'));
   }, [user]);
 
   // Închide drawer-ul la navigare
@@ -127,11 +118,28 @@ export const MobileLayout: React.FC = () => {
 
   return (
     <div className="mobile-layout">
-      {/* ── Header mobil cu numele școlii centrat ── */}
+      {/* ── Header mobil cu logo caracatiță și nume Oktapod ── */}
       <header className="mobile-header">
-        <div className="mobile-header-school">
-          {schoolName || 'HSSA Portal'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <img
+            src="/logo.png"
+            alt="Oktapod"
+            style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+          />
+          <span style={{
+            fontSize: '1.05rem',
+            fontWeight: 800,
+            color: 'var(--mobile-school-color)',
+            letterSpacing: '-0.02em',
+          }}>
+            Oktapod
+          </span>
         </div>
+
+        <div className="mobile-header-school">
+          {schoolName || ''}
+        </div>
+
         <button
           className="mobile-icon-btn mobile-header-menu-btn"
           onClick={() => setDrawerOpen(true)}
@@ -174,9 +182,21 @@ export const MobileLayout: React.FC = () => {
         {/* Header drawer */}
         <div className="mobile-drawer-header">
           <div>
-            <div className="mobile-drawer-title">{schoolName || 'HSSA Portal'}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <img
+                src="/logo.png"
+                alt="Oktapod"
+                style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+              />
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--mobile-school-color)' }}>
+                Oktapod
+              </span>
+            </div>
+            <div className="mobile-drawer-title" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {schoolName || 'Platformă Școlară'}
+            </div>
             {user && (
-              <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className={`badge badge-${user.role.toLowerCase()}`}>{user.role}</span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                   {user.firstName} {user.lastName}
@@ -219,10 +239,14 @@ export const MobileLayout: React.FC = () => {
           })}
         </nav>
 
-        {/* Footer drawer */}
+        {/* Footer drawer: Customizare culoare, Dark Mode & Deconectare */}
         <div className="mobile-drawer-footer">
+          <div style={{ padding: '0.25rem 0' }}>
+            <AccentColorPicker compact={false} />
+          </div>
+
           <button
-            onClick={() => setIsDarkMode((p) => !p)}
+            onClick={toggleDarkMode}
             className="btn btn-outline mobile-drawer-footer-btn"
             title="Schimbă tema"
           >

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { useTheme } from '../common/ThemeContext';
+import { AccentColorPicker } from '../common/AccentColorPicker';
 import { apiClient } from '../api/client';
 import { 
   BookOpen, 
@@ -15,41 +17,24 @@ import {
   GraduationCap,
   FileCheck,
   Compass,
+  MessageSquare,
   Sun,
   Moon
 } from 'lucide-react';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
   const [schoolName, setSchoolName] = useState<string>('');
 
-  // Dark Mode State with LocalStorage persistence
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem('hssa_theme') === 'dark';
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('hssa_theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('hssa_theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode((prev) => !prev);
-  };
-
   useEffect(() => {
     if (!user) return;
     apiClient<{ name: string }>('/api/v1/admin/school')
       .then((s) => setSchoolName(s.name))
-      .catch(() => setSchoolName('HSSA Portal'));
+      .catch(() => setSchoolName('Oktapod'));
   }, [user]);
 
   useEffect(() => {
@@ -74,46 +59,56 @@ export const Layout: React.FC = () => {
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main)' }}>
       {/* Sidebar cu scrollbar propriu */}
       <aside className="desktop-sidebar">
-        {/* Header Sidebar — Nume școală cu verde ca pe mobil */}
+        {/* Header Sidebar — Logo Caracatiță + Nume aplicație Oktapod */}
         <div className="desktop-sidebar-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
               backgroundColor: 'var(--mobile-school-color-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--mobile-school-color)',
+              flexShrink: 0,
+              padding: '2px',
             }}>
-              <BookOpen size={20} />
+              <img
+                src="/logo.png"
+                alt="Oktapod"
+                style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+              />
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <h2 style={{
-                fontSize: '1rem',
-                fontWeight: 700,
+                fontSize: '1.15rem',
+                fontWeight: 800,
                 color: 'var(--mobile-school-color)',
                 margin: 0,
-                lineHeight: 1.25,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}>
-                {schoolName || 'HSSA Portal'}
+                Oktapod
               </h2>
-              {user && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
-                  <span className={`badge badge-${user.role.toLowerCase()}`} style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
-                    {user.role}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {user.firstName} {user.lastName}
-                  </span>
-                </div>
-              )}
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {schoolName || 'Platformă Școlară'}
+              </div>
             </div>
           </div>
+
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', padding: '0.4rem 0.6rem', backgroundColor: 'var(--bg-subtle)', borderRadius: '0.5rem' }}>
+              <span className={`badge badge-${user.role.toLowerCase()}`} style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                {user.role}
+              </span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 500, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.firstName} {user.lastName}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Scrollable Navigation Bar (Independent scroll) */}
@@ -145,6 +140,9 @@ export const Layout: React.FC = () => {
           </Link>
           <Link to="/clubs" className={`desktop-nav-link ${isActive('/clubs') ? 'desktop-nav-link--active' : ''}`}>
             <Compass size={18} /> <span>Cluburi & Activități</span>
+          </Link>
+          <Link to="/news" className={`desktop-nav-link ${isActive('/news') ? 'desktop-nav-link--active' : ''}`}>
+            <MessageSquare size={18} /> <span>Noutăți & Social Hub</span>
           </Link>
           <Link to="/exams" className={`desktop-nav-link ${isActive('/exams') ? 'desktop-nav-link--active' : ''}`}>
             <FileCheck size={18} /> <span>Teste & Examene</span>
@@ -197,8 +195,11 @@ export const Layout: React.FC = () => {
           )}
         </nav>
 
-        {/* Footer Sidebar: Dark Mode Toggle & Deconectare */}
+        {/* Footer Sidebar: Customizare culori, Dark Mode Toggle & Deconectare */}
         <div className="desktop-sidebar-footer">
+          {/* Customizare temă / culori de accent */}
+          <AccentColorPicker />
+
           {/* Buton Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}

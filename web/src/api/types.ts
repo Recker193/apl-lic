@@ -205,6 +205,33 @@ export interface Club {
   meetings?: WeekendMeeting[];
 }
 
+export type SocialChannel = 'DISCORD' | 'WHATSAPP' | 'INSTAGRAM';
+
+export interface SocialFeedPost {
+  id: string;
+  channel: SocialChannel;
+  title: string;
+  content: string;
+  authorName?: string;
+  sourceUrl?: string;
+  imageUrl?: string;
+  clubId?: string;
+  clubName?: string;
+  createdAt: string;
+}
+
+export interface SocialIntegrationConfig {
+  id: string;
+  channel: SocialChannel;
+  channelName: string;
+  enabled: boolean;
+  webhookUrl?: string;
+  channelId?: string;
+  accountHandle?: string;
+  autoSync: boolean;
+  lastSyncAt?: string;
+}
+
 
 export interface TimetableEntry {
   id: string;

@@ -1,20 +1,47 @@
-# Status Frontend HSSA — Noiembrie 2026
+# Status Frontend Oktapod — Noiembrie 2026
 
-**Ultimul update:** 8 noiembrie 2026  
+**Ultimul update:** 9 noiembrie 2026  
 **Status build:** ✅ TypeScript 0 erori | ✅ Vite build 0 erori  
-**Versiune:** v0.3.2-desktop-parity-and-animations
+**Versiune:** v0.4.5-social-news-hub-and-rebrand
 
 ---
 
 ## 📋 Rezumat Executiv
 
-Frontend-ul HSSA a primit o actualizare completă pentru **alinierea interfeței de desktop (calculator) cu cea de pe mobil**, adăugând totodată **polish vizual și un sistem complet de micro-interacțiuni și animații fluide** atât pentru mobil cât și pentru desktop.
+Aplicația a fost rebranduită oficial în **Oktapod**, integrând **logo-ul caracatiță** (fără fundalul albastru, extras la transparență completă) și un **sistem dinamic de teme și culori personalizabile** pentru fiecare utilizator în parte.
+
+În plus, a fost adăugat modulul complet **Noutăți & Social Media Hub** (`/news`), permițând administratorilor și coordonatorilor de cluburi să conecteze și să transmită știri automat prin **Discord**, **WhatsApp** și **Instagram**, acestea apărând instant în fluxul aplicației și pe dashboard-ul utilizatorilor.
 
 ---
 
 ## ✅ Completat
 
-### 1. **Paritate Desktop - Mobil & Polish Vizual**
+### 1. **Noutăți & Social Media Hub (Discord, WhatsApp, Instagram)**
+- ✅ `web/src/api/types.ts`: Definite tipurile de date pentru canale sociale (`DISCORD`, `WHATSAPP`, `INSTAGRAM`), `SocialFeedPost` și `SocialIntegrationConfig`.
+- ✅ `web/src/common/SocialFeedService.ts`: Serviciu centralizat cu suport pentru stocare locală, adăugare/ștergere știri, management webhooks și sincronizare automată/la cerere (`triggerSync`).
+- ✅ `web/src/news/NewsHubView.tsx`:
+  - **Flux Noutăți**: Carduri interactive cu badge specific fiecărei rețele (culoare/iconiță nativă), imagini, club emitent, autor și link extern către postarea originală.
+  - **Filtrare rapidă**: Filtre pill pentru vizualizare după platformă (Toate, Discord, WhatsApp, Instagram).
+  - **Panou de Transmitere Știri**: Formular complet pentru administratori și responsabili de cluburi pentru a trimite știri către feed.
+  - **Panou Canale & Webhooks**: Setare webhook-uri, canale și sincronizare instantanee.
+- ✅ **Integrare Dashboard (Mobil & Desktop)**:
+  - Pe ecranul principal (`MobileHome.tsx`), widget-ul de știri din cluburi afișează automat cele mai noi mesaje venite prin canalele sociale.
+- ✅ **Navigație & Rute**: Rută dedicată `/news`, link în sidebar desktop și în drawer-ul mobil.
+
+### 2. **Rebranding Oficial: Oktapod & Logo Caracatiță Transparent**
+- ✅ **Extracție Logo Transparent**: Imaginea încărcată a fost procesată, eliminând fundalul cyan și marginile, păstrând doar caracatița violetă și ochii conturați, salvată în `web/public/logo.png`, `web/src/assets/logo.png` și `web/public/favicon.png`.
+- ✅ **Favicon & Titlu Document**: `web/index.html` actualizat cu titlul `<title>Oktapod</title>` și iconița caracatiță.
+- ✅ **Header & Sidebar Desktop**: Logo-ul caracatiță apare proeminent în `desktop-sidebar-header` alături de textul **Oktapod**.
+- ✅ **Header & Drawer Mobil**: Header-ul mobil include logo-ul caracatiță lângă titlul **Oktapod**, precum și în meniul lateral drawer.
+- ✅ **Ecrane de Autentificare**: Paginile de `Login` și `Register` afișează logo-ul caracatiță animat și denumirea Oktapod.
+
+### 3. **Sistem de Teme & Personalizare Culori (Theme & Accent Color Customizer)**
+- ✅ `web/src/common/ThemeContext.tsx`:
+  - Context React complet pentru Dark Mode și gestionarea accentului cromatic al aplicației.
+  - 6 palete de culori gata definite (Oktapod Violet, Ocean Cyan, Smarald Tonic, Classic Indigo, Solar Amber, Coral Rose).
+  - Actualizare dinamică a variabilelor CSS `--primary`, `--primary-hover`, `--mobile-school-color`, `--mobile-school-color-light` și atributului `data-accent`.
+- ✅ `web/src/common/AccentColorPicker.tsx`: Componentă UI interactivă cu butoane circulare animate pentru selectarea culorii de accent în timp real.
+- ✅ **Accesibilitate Customizare**: Disponibilă în footer-ul sidebar-ului de desktop, în drawer-ul mobil și în pagina de **Profil**.
 - ✅ `web/src/app/Layout.tsx` (Desktop):
   - Sidebar modernizat cu brandingul verde al liceului identic cu cel mobil (`--mobile-school-color`)
   - Profil utilizator compact cu avatar tematic și badge de rol
