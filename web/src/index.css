@@ -813,8 +813,6 @@ a:hover {
 .mhome-greeting-card:hover .mhome-greeting-icon {
   transform: scale(1.08) rotate(3deg);
 }
-  margin-left: 1rem;
-}
 
 .mhome-notes-icon-img {
   width: 58px;

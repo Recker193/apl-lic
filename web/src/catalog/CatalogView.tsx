@@ -408,7 +408,6 @@ export const CatalogView: React.FC = () => {
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 1rem', color: 'var(--text-main)' }}>
           Panou Tehnic & Înregistrare Note
         </h2>
-      </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn btn-outline" onClick={handlePrint} title="Tipărește situația">

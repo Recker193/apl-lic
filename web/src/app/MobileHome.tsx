@@ -713,6 +713,4 @@ export const MobileHome: React.FC = () => {
       </section>
     </div>
   );
-    </div>
-  );
 };

@@ -438,13 +438,10 @@ export const TimetableView: React.FC = () => {
         <div>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Gestiune Orar & Intervale</h2>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Program săptămânal interactiv și configurare cursuri
+            {isAdmin 
+              ? `Administrare orar Clasa ${currentClassName || ''} și activități de club` 
+              : 'Programul săptămânal al cursurilor și cluburilor de weekend'}
           </p>
-        </div>
-                ? `Administrare orar Clasa ${currentClassName || ''} și activități de club` 
-                : 'Programul săptămânal al cursurilor și cluburilor de weekend'}
-            </p>
-          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
