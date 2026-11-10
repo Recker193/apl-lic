@@ -75,16 +75,23 @@ export const AdminDashboard: React.FC = () => {
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await apiClient<{ token: string }>('/api/v1/invitations', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole,
-          classId: inviteClassId || undefined,
-        }),
-      });
+      const res = await apiClient<{ token: string; emailSent?: boolean }>(
+        '/api/v1/invitations',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: inviteRole,
+            classId: inviteClassId || undefined,
+          }),
+        },
+      );
       setLastInviteToken(res.token);
-      alert('Invitație creată cu succes!');
+      alert(
+        res.emailSent === false
+          ? 'Invitație creată, dar emailul nu a putut fi trimis. Trimiteți manual linkul afișat mai jos.'
+          : 'Invitație creată cu succes!',
+      );
       setInviteEmail('');
       setInviteClassId('');
       loadAll();

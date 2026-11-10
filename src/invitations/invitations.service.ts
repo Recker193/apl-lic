@@ -63,10 +63,15 @@ export class InvitationsService {
     });
 
     const env = loadEnv();
-    await this.mail.send({
+    const emailSent = await this.mail.send({
       to: invitation.email,
-      subject: 'Invitation to High School Students App',
-      text: `Open ${env.appBaseUrl}/register?token=${raw}`,
+      subject: 'Invitație de activare cont – Oktapod',
+      text:
+        `Ați fost invitat(ă) să vă creați un cont pe Oktapod.\n\n` +
+        `Deschideți linkul de mai jos, completați numele și alegeți o parolă. ` +
+        `Linkul este valabil 7 zile.\n\n` +
+        `${env.appBaseUrl}/register?token=${raw}\n\n` +
+        `Dacă nu ați solicitat această invitație, îl puteți ignora.\n\nEchipa Oktapod`,
     });
     await this.audit.record({
       actorId: user.id,
@@ -82,6 +87,8 @@ export class InvitationsService {
       role: invitation.role,
       expiresAt: invitation.expiresAt,
       token: raw,
+      // Dacă SMTP-ul a eșuat, administratorul trebuie să trimită linkul manual.
+      emailSent,
     };
   }
 }

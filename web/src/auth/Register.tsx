@@ -11,6 +11,7 @@ export const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,15 +24,19 @@ export const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await apiClient('/api/v1/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          token,
-          firstName,
-          lastName,
-          password,
-        }),
-      });
+      const res = await apiClient<{ id: string; emailSent?: boolean }>(
+        '/api/v1/auth/register',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            token,
+            firstName,
+            lastName,
+            password,
+          }),
+        },
+      );
+      setEmailSent(res.emailSent !== false);
       setSuccess(true);
       // Nu mai redirectăm automat - lăsăm utilizatorul să citească mesajul
     } catch (err: any) {
@@ -66,9 +71,19 @@ export const Register: React.FC = () => {
                 Vă rugăm să verificați emailul pentru a confirma adresa înainte de a vă conecta.
               </p>
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-              Nu ați primit emailul? Verificați folderul Spam sau așteptați 1-2 minute.
-            </p>
+            {emailSent ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                Nu ați primit emailul? Verificați folderul Spam sau așteptați 1-2 minute, apoi folosiți „Retrimite emailul de confirmare” din pagina de conectare.
+              </p>
+            ) : (
+              <div style={{ padding: '0.75rem', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '0.375rem', fontSize: '0.85rem' }}>
+                <strong>Emailul de confirmare nu a putut fi trimis.</strong>
+                <p style={{ margin: '0.5rem 0 0' }}>
+                  Serverul de email nu a acceptat mesajul. Anunțați administratorul școlii și
+                  încercați „Retrimite emailul de confirmare” din pagina de conectare.
+                </p>
+              </div>
+            )}
             <Link to="/login" className="btn btn-primary" style={{ textAlign: 'center' }}>
               Mergeți la autentificare
             </Link>

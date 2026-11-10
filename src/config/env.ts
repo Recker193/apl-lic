@@ -12,6 +12,8 @@ export type AppEnv = {
   mailHost: string;
   mailPort: number;
   mailFrom: string;
+  mailUser?: string;
+  mailPassword?: string;
   appBaseUrl: string;
   enableCron: boolean;
   trustProxy: boolean | number;
@@ -24,6 +26,14 @@ function required(name: string): string {
     throw new Error(`Missing required environment variable ${name}`);
   }
   return value;
+}
+
+function firstNonEmpty(...values: (string | undefined)[]): string | undefined {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return undefined;
 }
 
 function parseTrustProxy(value: string | undefined): boolean | number {
@@ -60,7 +70,20 @@ export function loadEnv(): AppEnv {
     maxUploadBytes: Number(process.env.MAX_UPLOAD_BYTES ?? 10 * 1024 * 1024),
     mailHost: process.env.MAIL_HOST ?? 'localhost',
     mailPort: Number(process.env.MAIL_PORT ?? 1025),
-    mailFrom: process.env.MAIL_FROM ?? 'noreply@localhost',
+    // MAIL_PASS este acceptat ca alias: unele template-uri de deploy (Render,
+    // Railway) folosesc numele acesta, iar fără el autentificarea SMTP lipsea
+    // în tăcere și Gmail respingea trimiterea.
+    mailPassword: firstNonEmpty(
+      process.env.MAIL_PASSWORD,
+      process.env.MAIL_PASS,
+    ),
+    mailUser: firstNonEmpty(process.env.MAIL_USER),
+    // Gmail (și majoritatea providerilor) respinge mesajele al căror expeditor
+    // nu aparține contului autentificat; dacă MAIL_FROM nu e setat folosim
+    // adresa contului SMTP în loc de „noreply@localhost”.
+    mailFrom: firstNonEmpty(process.env.MAIL_FROM) ??
+      firstNonEmpty(process.env.MAIL_USER) ??
+      'noreply@localhost',
     appBaseUrl: process.env.APP_BASE_URL ?? 'http://localhost:3000',
     enableCron: process.env.ENABLE_CRON === 'true',
     trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
