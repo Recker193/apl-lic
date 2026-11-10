@@ -3,6 +3,7 @@ import * as argon2 from 'argon2';
 import { AuthenticatedUser } from '../common/types/authenticated-user';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
 import { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly authService: AuthService,
   ) {}
 
   async getById(actor: AuthenticatedUser, id: string) {
@@ -41,13 +43,11 @@ export class UsersService {
       where: { id: actor.id },
       data,
     });
-    return {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      schoolId: user.schoolId,
+    return this.authService.toPublicUser({
+      ...user,
+      isActive: user.isActive,
+      emailVerifiedAt: user.emailVerifiedAt,
+    });
     };
   }
 

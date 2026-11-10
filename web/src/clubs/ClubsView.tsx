@@ -17,44 +17,7 @@ import {
 } from 'lucide-react';
 import { formatDateTime24 } from '../common/dateUtils';
 
-const VIANU_CLUBS_CATALOG = [
-  {
-    id: 'engineering',
-    name: 'Vianu Engineering',
-    img: '/club-engineering.png',
-    description: 'Dezvoltare hardware, robotică FTC și proiecte avansate de inginerie mecatronică.',
-  },
-  {
-    id: 'teded',
-    name: 'TED-Ed Clubs Vianu',
-    img: '/club-teded.png',
-    description: 'Dezvoltarea abilităților de public speaking, prezentare de idei inovatoare și dezbateri constructive.',
-  },
-  {
-    id: 'vianumun',
-    name: 'VianuMUN 2027',
-    img: '/club-vianumun.png',
-    description: 'Model United Nations la Vianu. Simulare a comisiilor internaționale ONU și diplomație.',
-  },
-  {
-    id: 'photography',
-    name: 'Vianu Photography',
-    img: '/club-photography.png',
-    description: 'Artă fotografică, editare digitală, expoziții școlare și acoperirea evenimentelor din liceu.',
-  },
-  {
-    id: 'theatre',
-    name: 'Trupa Vianu',
-    img: '/club-theatre.png',
-    description: 'Trupa oficială de teatru a colegiului: actorie, scenografie, piese clasice și contemporane.',
-  },
-  {
-    id: 'art',
-    name: 'Art & Sculpture Club',
-    img: '/club-art.png',
-    description: 'Arte vizuale, modelaj, pictură și explorare creativă.',
-  },
-];
+
 
 export const ClubsView: React.FC = () => {
   const { user } = useAuth();
@@ -135,7 +98,7 @@ export const ClubsView: React.FC = () => {
     }
   };
 
-  const [selectedClubInfo, setSelectedClubInfo] = useState<typeof VIANU_CLUBS_CATALOG[0] | null>(null);
+  const [selectedClubInfo, setSelectedClubInfo] = useState<Club | null>(null);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -165,18 +128,33 @@ export const ClubsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Secțiunea "Cluburile tale" + "Solicită înființarea unui nou club!" */}
+      {/* Secțiunea "Cluburile tale" dinamic */}
       <div className="clubs-user-section">
         <div className="clubs-user-list">
           <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
             Cluburile tale:
           </div>
-          <div style={{ fontSize: '0.88rem', color: 'var(--text-main)' }}>
-            <strong>1. Sparktech</strong> <span style={{ color: 'var(--text-muted)' }}>(te-ai alăturat 15 oct. 2025)</span>
-          </div>
-          <div style={{ fontSize: '0.88rem', color: 'var(--text-main)' }}>
-            <strong>2. VIANEWS</strong> <span style={{ color: 'var(--text-muted)' }}>(te-ai alăturat 21 sept. 2026)</span>
-          </div>
+          {clubs.filter((c) => c.members?.some((m) => m.userId === user?.id)).length === 0 ? (
+            <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+              Nu ești înscris încă la niciun club.
+            </div>
+          ) : (
+            clubs
+              .filter((c) => c.members?.some((m) => m.userId === user?.id))
+              .map((c, idx) => {
+                const membership = c.members?.find((m) => m.userId === user?.id);
+                return (
+                  <div key={c.id} style={{ fontSize: '0.88rem', color: 'var(--text-main)' }}>
+                    <strong>{idx + 1}. {c.name}</strong>{' '}
+                    {membership && (
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        (te-ai alăturat {new Date(membership.joinedAt).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' })})
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+          )}
         </div>
 
         <button 
@@ -184,69 +162,10 @@ export const ClubsView: React.FC = () => {
           onClick={() => setShowAddModal(true)}
           className="clubs-request-action"
         >
-          <img src="/icon-new-club-request.png" alt="Solicită club" className="clubs-request-icon" />
+          <img src="/icon-new-club-request.png" alt="Solicită club" className="clubs-request-icon" onError={(e) => (e.currentTarget.style.display = 'none')} />
           <span>Solicită înființarea unui nou club!</span>
         </button>
       </div>
-
-      {/* Grid 2-coloane cu cardurile rotunde de cluburi Vianu */}
-      <div className="clubs-badges-grid">
-        {VIANU_CLUBS_CATALOG.map((item) => (
-          <div key={item.id} className="club-badge-card">
-            <button 
-              type="button" 
-              className="club-badge-info-btn"
-              title={`Detalii ${item.name}`}
-              onClick={() => setSelectedClubInfo(item)}
-            >
-              <Info size={20} />
-            </button>
-            <img 
-              src={item.img} 
-              alt={item.name} 
-              className="club-badge-circle"
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Modal info detaliat club */}
-      {selectedClubInfo && (
-        <div className="modal-overlay" onClick={() => setSelectedClubInfo(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px', textAlign: 'center', padding: '1.75rem' }}>
-            <img 
-              src={selectedClubInfo.img} 
-              alt={selectedClubInfo.name} 
-              style={{ width: '120px', height: '120px', borderRadius: '50%', margin: '0 auto 1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} 
-            />
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem', color: 'var(--text-main)' }}>
-              {selectedClubInfo.name}
-            </h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 1.25rem' }}>
-              {selectedClubInfo.description}
-            </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-              <button 
-                type="button" 
-                className="btn btn-outline" 
-                onClick={() => setSelectedClubInfo(null)}
-              >
-                Închide
-              </button>
-              <button 
-                type="button" 
-                className="btn btn-primary" 
-                onClick={() => {
-                  alert(`Cererea ta de înscriere la ${selectedClubInfo.name} a fost trimisă coordonatorului!`);
-                  setSelectedClubInfo(null);
-                }}
-              >
-                Înscrie-te la club
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Lista completă cu activitățile și cluburile dinamice din baza de date */}
       <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>

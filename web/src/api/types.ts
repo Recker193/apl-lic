@@ -7,6 +7,16 @@ export interface User {
   lastName: string;
   role: UserRole;
   schoolId: string;
+  class?: {
+    id: string;
+    name: string;
+    schoolYear: string;
+  } | null;
+  homeroomTeacher?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
 }
 
 export interface Group {
@@ -17,6 +27,21 @@ export interface Group {
   classId: string;
   teacherId: string;
   createdAt: string;
+  teacher?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  class?: {
+    id: string;
+    name: string;
+    schoolYear: string;
+  };
+  subject?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface GroupMember {

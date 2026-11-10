@@ -359,87 +359,63 @@ export const TimetableView: React.FC = () => {
     window.print();
   };
 
-  const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Clasa a X-a F';
+  const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Toate clasele';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Template Header conform pozei Vianu (media_1794298936232_2bd93caf) */}
+      {/* Header Orar dinamic pentru clasa selectată */}
       <div className="timetable-vianu-header">
-        <h1 className="timetable-vianu-title">Orar- {currentClassName}</h1>
-        <h2 className="timetable-vianu-subtitle">Actualizat la 09.11.2026</h2>
+        <h1 className="timetable-vianu-title">Orar - {currentClassName}</h1>
+        <h2 className="timetable-vianu-subtitle">Program săptămânal</h2>
       </div>
 
-      {/* Official Timetable Image Matrix & Zoom View */}
-      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-        <img 
-          src="/timetable-official-grid.png" 
-          alt="Orar Clasa a X-a F Colegiul Național de Informatică Tudor Vianu" 
-          className="timetable-official-grid-img"
-        />
-      </div>
+      {/* Ribbon Banner "Cluburile tale" (afișat dacă sunt cluburi sau întâlniri de weekend) */}
+      {(weekendMeetings.length > 0 || isClubCoordinator) && (
+        <>
+          <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
+            <img 
+              src="/ribbon-clubs.png" 
+              alt="Cluburile tale" 
+              className="ribbon-banner-img"
+            />
+          </div>
 
-      {/* Ribbon Banner "Cluburile tale" */}
-      <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
-        <img 
-          src="/ribbon-clubs.png" 
-          alt="Cluburile tale" 
-          className="ribbon-banner-img"
-        />
-      </div>
-
-      {/* Weekend Club Sessions Cards (Sparktech & VIANEWS) */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', width: '100%' }}>
-        {/* Sparktech Sâmbătă */}
-        <div className="timetable-club-item">
-          <img 
-            src="/sparktech-thumb.png" 
-            alt="Sparktech Robot" 
-            className="timetable-club-thumb" 
-          />
-          <div className="timetable-club-schedule">
-            <div>Sâmbătă:</div>
-            <div>• Ora: <span style={{ textDecoration: 'underline' }}>9:00-12:00</span></div>
-            <div>• Sala 15</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', width: '100%' }}>
+            {weekendMeetings.map((meeting) => (
+              <div key={meeting.id} className="timetable-club-item">
+                <img 
+                  src="/sparktech-thumb.png" 
+                  alt={meeting.title} 
+                  className="timetable-club-thumb" 
+                />
+                <div className="timetable-club-schedule">
+                  <div>{meeting.dayOfWeek === 'SATURDAY' ? 'Sâmbătă' : 'Duminică'}:</div>
+                  <div>• Ora: <span style={{ textDecoration: 'underline' }}>{meeting.startTime}-{meeting.endTime}</span></div>
+                  {meeting.room && <div>• Sala {meeting.room}</div>}
+                </div>
+                <div className="timetable-club-name">
+                  <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-muted)', display: 'block' }}>
+                    {meeting.club?.name}
+                  </span>
+                  {meeting.title}
+                </div>
+                <div className="timetable-particip-badge">
+                  <img src="/badge-particip.png" alt="Particip" />
+                  <span>Particip</span>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="timetable-club-name">
-            Sparktech
-          </div>
-          <div className="timetable-particip-badge">
-            <img src="/badge-particip.png" alt="Particip" />
-            <span>Particip</span>
-          </div>
-        </div>
-
-        {/* VIANEWS Duminică */}
-        <div className="timetable-club-item">
-          <img 
-            src="/vianews-thumb.png" 
-            alt="VIANEWS Revista" 
-            className="timetable-club-thumb" 
-          />
-          <div className="timetable-club-schedule">
-            <div>Duminică:</div>
-            <div>• Ora: <span style={{ textDecoration: 'underline' }}>16:30-17:30</span></div>
-            <div>• Sala de festivități</div>
-          </div>
-          <div className="timetable-club-name" style={{ fontSize: '1.05rem', textAlign: 'center' }}>
-            <span style={{ fontWeight: 500, fontSize: '0.9rem', display: 'block', color: 'var(--text-muted)' }}>Întâlnire redacție</span>
-            VIANEWS
-          </div>
-          <div className="timetable-particip-badge">
-            <img src="/badge-particip.png" alt="Particip" />
-            <span>Particip</span>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Interactive Controls & Admin Panel */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
         <div>
           <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Gestiune Orar & Intervale</h2>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             {isAdmin 
-              ? `Administrare orar Clasa ${currentClassName || ''} și activități de club` 
+              ? `Administrare orar Clasa ${currentClassName} și activități de club` 
               : 'Programul săptămânal al cursurilor și cluburilor de weekend'}
           </p>
         </div>

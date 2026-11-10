@@ -142,7 +142,7 @@ export const MobileLayout: React.FC = () => {
             {schoolName ? schoolName.split('Tudor')[0]?.trim() || schoolName : 'Colegiul Național de Informatică'}
           </span>
           <span className="mobile-header-school-line2">
-            {schoolName && schoolName.includes('Tudor') ? 'Tudor Vianu' : (schoolName ? '' : 'Tudor Vianu')}
+            {schoolName && schoolName.length > 25 ? schoolName.substring(0, 25) : (schoolName || 'Liceul')}
           </span>
         </div>
 

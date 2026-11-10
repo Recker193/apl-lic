@@ -20,10 +20,14 @@ export const Profile: React.FC = () => {
   useEffect(() => {
     apiClient<{ name: string }>('/api/v1/admin/school')
       .then((s) => setSchoolName(s.name))
-      .catch(() => setSchoolName('Colegiul Național de Informatică Tudor Vianu'));
+      .catch(() => setSchoolName(''));
   }, []);
 
-  const fullName = `${lastName || 'Kiriță'} ${firstName || 'Natalia-Maria'}`;
+  const roleLabel = user?.role === 'ADMIN' ? 'Administrator' : user?.role === 'TEACHER' ? 'Profesor' : 'Elev';
+  const fullName = `${lastName || user?.lastName || ''} ${firstName || user?.firstName || ''}`.trim() || 'Utilizator';
+  const className = user?.class ? `Clasa ${user.class.name}` : (user?.role === 'ADMIN' ? 'Gestiune Centrală' : user?.role === 'TEACHER' ? 'Cadru Didactic' : 'Clasă neatribuită');
+  const schoolYear = user?.class?.schoolYear ? `An școlar ${user.class.schoolYear}` : '';
+  const homeroomName = user?.homeroomTeacher ? `Prof. ${user.homeroomTeacher.firstName} ${user.homeroomTeacher.lastName}` : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +52,11 @@ export const Profile: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* ── Header profil conform șablonului: Elev (stânga) + Buton roșiatic Deconectare (dreapta) ── */}
+      {/* ── Header profil conform șablonului: Rol (stânga) + Buton roșiatic Deconectare (dreapta) ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            Elev
+            {roleLabel}
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px', width: '28px' }}>
             <span style={{ height: '3px', backgroundColor: 'var(--text-main)', borderRadius: '2px' }} />
@@ -108,16 +112,16 @@ export const Profile: React.FC = () => {
           <span>Setări</span>
         </button>
 
-        {/* Avatar mare mov circular conform referinței */}
+        {/* Avatar circular */}
         <div style={{
           width: '130px',
           height: '130px',
           borderRadius: '50%',
-          backgroundColor: '#4a2559',
+          backgroundColor: 'var(--primary, #4a2559)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 8px 24px rgba(74, 37, 89, 0.25)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
           overflow: 'hidden',
           marginBottom: '1.15rem',
         }}>
@@ -128,69 +132,73 @@ export const Profile: React.FC = () => {
           />
         </div>
 
-        {/* Nume elev */}
+        {/* Nume utilizator */}
         <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
           {fullName}
         </h2>
-        <p style={{ fontSize: '1rem', fontWeight: 600, color: '#6b7280', margin: '0.25rem 0 0' }}>
-          Clasa a X-a F
+        <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
+          {className}
         </p>
-        <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#6b7280', margin: '0.15rem 0 0' }}>
-          An școlar 2026-2027
-        </p>
+        {schoolYear && (
+          <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-muted)', margin: '0.15rem 0 0' }}>
+            {schoolYear}
+          </p>
+        )}
       </div>
 
       {/* ── Panglică festivă / Ribbon dinamic în funcție de numele și culoarea aleasă de liceu ── */}
       <div style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '0.75rem 0' }}>
         <div className="school-ribbon-dynamic">
           <span className="school-ribbon-dynamic-text">
-            {schoolName || 'Colegiul Național de Informatică Tudor Vianu'}
+            {schoolName || 'Liceu'}
           </span>
         </div>
       </div>
 
-      {/* ── Secțiune Diriginte: Avatar verde + Nume + Buton Mesaj ── */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.85rem 1rem',
-        borderRadius: '16px',
-        backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        boxShadow: '0 4px 15px -2px rgba(0,0,0,0.04)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <img
-            src="/avatar-green.png"
-            alt="Diriginte"
-            style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'contain' }}
-          />
-          <div>
-            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
-              <strong>Diriginte:</strong> Prof. Lupașcu Oana-Maria
-            </span>
+      {/* ── Secțiune Diriginte (afișat dacă utilizatorul are diriginte atribuit) ── */}
+      {homeroomName && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.85rem 1rem',
+          borderRadius: '16px',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 4px 15px -2px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <img
+              src="/avatar-green.png"
+              alt="Diriginte"
+              style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'contain' }}
+            />
+            <div>
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                <strong>Diriginte:</strong> {homeroomName}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            gap: '2px',
-            color: 'var(--text-main)',
-          }}
-          title="Trimite mesaj dirigintelui"
-        >
-          <img src="/action-chat.png" alt="Mesaj" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4b5563' }}>Mesaj</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              gap: '2px',
+              color: 'var(--text-main)',
+            }}
+            title="Trimite mesaj dirigintelui"
+          >
+            <img src="/action-chat.png" alt="Mesaj" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4b5563' }}>Mesaj</span>
+          </button>
+        </div>
+      )}
 
       {/* ── Modal / Panou Setări & Personalizare Teme ── */}
       {showSettingsModal && (

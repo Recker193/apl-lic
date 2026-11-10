@@ -29,7 +29,27 @@ export class AuthService {
     private readonly mail: MailService,
   ) {}
 
-  toPublicUser(user: AuthenticatedUser) {
+  async toPublicUser(user: AuthenticatedUser) {
+    const classMembership = await this.prisma.classMembership.findFirst({
+      where: { studentId: user.id },
+      include: {
+        class: {
+          include: {
+            homeroomAssignments: {
+              include: {
+                teacher: {
+                  select: { id: true, firstName: true, lastName: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const studentClass = classMembership?.class;
+    const homeroomTeacher = studentClass?.homeroomAssignments?.[0]?.teacher;
+
     return {
       id: user.id,
       email: user.email,
@@ -37,6 +57,20 @@ export class AuthService {
       lastName: user.lastName,
       role: user.role,
       schoolId: user.schoolId,
+      class: studentClass
+        ? {
+            id: studentClass.id,
+            name: studentClass.name,
+            schoolYear: studentClass.schoolYear,
+          }
+        : null,
+      homeroomTeacher: homeroomTeacher
+        ? {
+            id: homeroomTeacher.id,
+            firstName: homeroomTeacher.firstName,
+            lastName: homeroomTeacher.lastName,
+          }
+        : null,
     };
   }
 

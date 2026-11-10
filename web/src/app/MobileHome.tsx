@@ -173,7 +173,7 @@ export const MobileHome: React.FC = () => {
             letterSpacing: '-0.01em',
             lineHeight: 1.2,
           }}>
-            {schoolName || 'Colegiul Național de Informatică Tudor Vianu'}
+            {schoolName || 'Liceul Tău'}
           </div>
         </div>
 
@@ -188,7 +188,7 @@ export const MobileHome: React.FC = () => {
             <p className="mhome-greeting-date">{dateLabel}</p>
             <p className="mhome-greeting-title">
               Bună {now.getHours() < 12 ? 'dimineața' : now.getHours() < 18 ? 'ziua' : 'seara'},{' '}
-              <strong>{user?.firstName || 'Natalia'}!</strong>
+              <strong>{user?.firstName || 'Elev'}!</strong>
             </p>
             <p className="mhome-greeting-sub" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
               Clasa a X-a F • profil mate-info intensiv
@@ -449,13 +449,6 @@ export const MobileHome: React.FC = () => {
                   events.map((e) => (
                     <div key={e.id} className="mhome-event-item">
                       <div className="mhome-event-thumb" aria-hidden="true">
-                        <img
-                          src="/carfest.png"
-                          alt={e.title}
-                          onError={(e) => {
-                            (e.currentTarget as HTMLElement).style.display = 'none';
-                          }}
-                        />
                         <Monitor size={26} strokeWidth={1.2} color="var(--mobile-school-color)" />
                       </div>
                       <div className="mhome-event-body">
@@ -471,14 +464,8 @@ export const MobileHome: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="mhome-event-item">
-                    <div className="mhome-event-thumb">
-                      <img src="/carfest.png" alt="Vianu Carfest" />
-                    </div>
-                    <div className="mhome-event-body">
-                      <span className="mhome-event-title">Vianu Carfest</span>
-                      <span className="mhome-event-date">17-18 octombrie • curtea interioară</span>
-                    </div>
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    Nu există evenimente programate în acest moment.
                   </div>
                 )}
               </div>
@@ -502,10 +489,10 @@ export const MobileHome: React.FC = () => {
           <p className="mhome-greeting-date">{dateLabel}</p>
           <p className="mhome-greeting-title">
             Bună {now.getHours() < 12 ? 'dimineața' : now.getHours() < 18 ? 'ziua' : 'seara'},{' '}
-            <strong>{user?.firstName || 'Natalia'}!</strong>
+            <strong>{user?.firstName || 'Elev'}!</strong>
           </p>
           <p className="mhome-greeting-sub">
-            Clasa a X-a F • profil mate-info intensiv
+            {user?.class ? `Clasa ${user.class.name}` : 'Fără clasă atribuită'}
           </p>
         </div>
         <div className="mhome-greeting-icon" aria-hidden="true">
@@ -676,13 +663,6 @@ export const MobileHome: React.FC = () => {
             events.map((e) => (
               <div key={e.id} className="mhome-event-item">
                 <div className="mhome-event-thumb" aria-hidden="true">
-                  <img
-                    src="/carfest.png"
-                    alt={e.title}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = 'none';
-                    }}
-                  />
                   <Monitor size={26} strokeWidth={1.2} color="var(--mobile-school-color)" />
                 </div>
                 <div className="mhome-event-body">
@@ -698,15 +678,8 @@ export const MobileHome: React.FC = () => {
               </div>
             ))
           ) : (
-            /* Item reprezentativ din template-ul vizual */
-            <div className="mhome-event-item">
-              <div className="mhome-event-thumb">
-                <img src="/carfest.png" alt="Vianu Carfest" />
-              </div>
-              <div className="mhome-event-body">
-                <span className="mhome-event-title">Vianu Carfest</span>
-                <span className="mhome-event-date">17-18 octombrie • curtea interioară</span>
-              </div>
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              Nu există evenimente programate în acest moment.
             </div>
           )}
         </div>

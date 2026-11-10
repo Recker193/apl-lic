@@ -21,6 +21,17 @@ export class GroupsService {
     if (user.role === UserRole.ADMIN) {
       return this.prisma.subjectGroup.findMany({
         where: { schoolId: user.schoolId },
+        include: {
+          teacher: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+          class: {
+            select: { id: true, name: true, schoolYear: true },
+          },
+          subject: {
+            select: { id: true, name: true },
+          },
+        },
         orderBy: { name: 'asc' },
       });
     }
@@ -31,6 +42,17 @@ export class GroupsService {
           { teacherId: user.id },
           { memberships: { some: { userId: user.id } } },
         ],
+      },
+      include: {
+        teacher: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        class: {
+          select: { id: true, name: true, schoolYear: true },
+        },
+        subject: {
+          select: { id: true, name: true },
+        },
       },
       orderBy: { name: 'asc' },
     });

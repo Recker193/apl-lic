@@ -217,98 +217,34 @@ export const CatalogView: React.FC = () => {
 
   const [activeCatalogTab, setActiveCatalogTab] = useState<'note' | 'sumar' | 'observatii' | 'mesagerie' | 'motivari'>('note');
 
-  // Matricea de 9 materii conform imaginii media_1794298936246_6fc9ebd8
-  const VIANU_CATALOG_SUBJECTS = [
-    {
-      name: 'Limba și literatura română',
-      teacher: 'NEACȘU CLARA MIHAELA',
-      notes: ['9 / 02-10', '9 / 21-10'],
-      absences: [],
-      media: '9',
-      nemotivate: 0,
-      motivate: 0,
-    },
-    {
-      name: 'Limba engleză',
-      teacher: 'VOICU FLORINA',
-      notes: [],
-      absences: [],
-      media: '-',
-      nemotivate: 0,
-      motivate: 0,
-    },
-    {
-      name: 'Limba franceză',
-      teacher: 'MĂGUREANU NELA-SILVIA',
-      notes: ['10 / 09-10'],
-      absences: [],
-      media: '-',
-      nemotivate: 0,
-      motivate: 0,
-    },
-    {
-      name: 'Matematică',
-      teacher: 'CHITEȘ COSTEL-DOBRE',
-      notes: ['8 / 21-10', '10 / 23-10'],
-      absences: [],
-      media: '9',
-      nemotivate: 0,
-      motivate: 0,
-    },
-    {
-      name: 'Fizică',
-      teacher: 'TUDORAȘCU ANTONA-IRINA',
-      notes: [],
-      absences: [],
-      media: '-',
-      nemotivate: 0,
-      motivate: 0,
-    },
-    {
-      name: 'Chimie',
-      teacher: 'MARCU MIRELA',
-      notes: ['4 / 08-10'],
-      absences: ['14-10 .', '22-10 .'],
-      media: '-',
-      nemotivate: 2,
-      motivate: 0,
-    },
-    {
-      name: 'Biologie',
-      teacher: 'IONESCU MĂDĂLINA',
-      notes: [],
-      absences: [],
-      media: '-',
-      nemotivate: 0,
-      motivate: 0,
-    },
-    {
-      name: 'Istorie',
-      teacher: 'CIUPERCĂ DAN',
-      notes: [],
-      absences: [],
-      media: '-',
-      nemotivate: 0,
-      motivate: 0,
-    },
-    {
-      name: 'Geografie',
-      teacher: 'PETCULESCU DIANA-CORINA',
-      notes: [],
-      absences: ['28-09 .'],
-      media: '-',
-      nemotivate: 1,
-      motivate: 0,
-    },
-  ];
+  // Calculează datele dinamice per materie/grup
+  const subjectData = groups.map((group) => {
+    const groupGrades = grades.filter((g) => g.group?.id === group.id);
+    const groupAbsences = absences.filter((a) => a.group?.id === group.id);
+    const average = groupGrades.length > 0 
+      ? (groupGrades.reduce((acc, g) => acc + g.value, 0) / groupGrades.length).toFixed(1)
+      : '-';
+    const unexcused = groupAbsences.filter((a) => a.status === 'UNEXCUSED').length;
+    const excused = groupAbsences.filter((a) => a.status === 'EXCUSED').length;
+
+    return {
+      name: group.subject?.name || group.name,
+      teacher: group.teacher ? `${group.teacher.lastName || ''} ${group.teacher.firstName || ''}`.trim().toUpperCase() : 'N/A',
+      notes: groupGrades.map((g) => `${g.value} / ${new Date(g.gradedAt).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}`),
+      absences: groupAbsences.map((a) => `${new Date(a.date).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })} .`),
+      media: average,
+      nemotivate: unexcused,
+      motivate: excused,
+    };
+  });
 
   const studentDisplayName = user?.role === 'STUDENT'
-    ? `${user.lastName || 'KIRIȚĂ'} ${user.firstName || 'NATALIA MARIA'}`.toUpperCase()
-    : 'KIRIȚĂ A.D. NATALIA MARIA';
+    ? `${user.lastName || ''} ${user.firstName || ''}`.trim().toUpperCase()
+    : user ? `${user.lastName || ''} ${user.firstName || ''}`.trim().toUpperCase() : 'UTILIZATOR';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header oficial Catalog Vianu */}
+      {/* Header oficial Catalog */}
       <div className="catalog-vianu-header-row">
         <div>
           <h1 className="catalog-student-heading">
@@ -328,7 +264,7 @@ export const CatalogView: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Vianu Catalog */}
+      {/* Tabs Catalog */}
       <div className="catalog-tabs-bar">
         <button 
           type="button" 
@@ -367,9 +303,9 @@ export const CatalogView: React.FC = () => {
         </button>
       </div>
 
-      {/* 3x3 Card Grid Albastru conform mediei 6 */}
+      {/* Card Grid dinamic pentru materii */}
       <div className="catalog-subjects-grid">
-        {VIANU_CATALOG_SUBJECTS.map((subj, idx) => (
+        {subjectData.length > 0 ? subjectData.map((subj, idx) => (
           <div key={idx} className="catalog-card-container">
             <div className="catalog-card-header">
               <h3 className="catalog-card-subject-name">{subj.name}</h3>
@@ -400,7 +336,11 @@ export const CatalogView: React.FC = () => {
               </div>
             </div>
           </div>
-        ))}
+        )) : (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+            Nu există materii înregistrate. Profesorii vor adăuga materii și note în curând.
+          </div>
+        )}
       </div>
 
       {/* Panou suplimentar interactiv pentru profesori & adăugare note */}
