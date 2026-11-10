@@ -48,7 +48,6 @@ export class UsersService {
       isActive: user.isActive,
       emailVerifiedAt: user.emailVerifiedAt,
     });
-    };
   }
 
   async setActive(actor: AuthenticatedUser, id: string, isActive: boolean) {
