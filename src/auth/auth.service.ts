@@ -78,19 +78,22 @@ export class AuthService {
     const invite = await this.prisma.invitation.findUnique({
       where: { tokenHash: hashToken(dto.token) },
     });
-    if (
-      !invite ||
-      invite.status !== InvitationStatus.PENDING ||
-      invite.expiresAt < new Date()
-    ) {
+    if (!invite || invite.expiresAt < new Date()) {
       throw new BadRequestException('Invalid invitation');
     }
 
     const existing = await this.prisma.user.findUnique({
       where: { email: invite.email },
     });
+    if (invite.status !== InvitationStatus.PENDING) {
+      throw new BadRequestException(
+        'Această invitație a fost deja folosită. Cereți administratorului un link nou.',
+      );
+    }
     if (existing) {
-      throw new BadRequestException('Invalid invitation');
+      throw new BadRequestException(
+        'Există deja un cont cu acest email. Verificați emailul de confirmare sau cereți administratorului un link nou.',
+      );
     }
 
     const passwordHash = await argon2.hash(dto.password);

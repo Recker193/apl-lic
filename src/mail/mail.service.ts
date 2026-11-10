@@ -29,6 +29,12 @@ export class MailService {
           process.env.MAIL_USER && process.env.MAIL_PASSWORD
             ? { user: process.env.MAIL_USER, pass: process.env.MAIL_PASSWORD }
             : undefined,
+        // Fără aceste limite nodemailer poate aștepta până la 2 minute pe un
+        // server SMTP care nu răspunde, blocând request-ul care trimite emailul
+        // (creare invitație / activare cont) până la timeout-ul de proxy.
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 10000,
       });
       await transporter.sendMail({
         from: env.mailFrom,
@@ -36,8 +42,9 @@ export class MailService {
         subject: mail.subject,
         text: mail.text,
       });
-    } catch {
-      this.logger.error('Failed to send email');
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to send email to ${mail.to}: ${reason}`);
     }
   }
 

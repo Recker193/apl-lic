@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
 import { SchoolClass, Subject, AuditLogItem, UserRole } from '../api/types';
-import { Shield, Plus, Mail } from 'lucide-react';
+import { Shield, Plus, Mail, Copy, Check } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
@@ -19,6 +19,11 @@ export const AdminDashboard: React.FC = () => {
   const [inviteRole, setInviteRole] = useState<UserRole>('STUDENT');
   const [inviteClassId, setInviteClassId] = useState('');
   const [lastInviteToken, setLastInviteToken] = useState('');
+  const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
+
+  const inviteUrl = lastInviteToken
+    ? `${window.location.origin}/register?token=${lastInviteToken}`
+    : '';
 
   const loadAll = async () => {
     try {
@@ -86,6 +91,30 @@ export const AdminDashboard: React.FC = () => {
     } catch (err: any) {
       alert(err.message);
     }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!inviteUrl) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(inviteUrl);
+      } else {
+        throw new Error('Clipboard API indisponibil');
+      }
+    } catch {
+      // Fallback pentru contexte ne-securizate (http în rețeaua locală)
+      const textarea = document.createElement('textarea');
+      textarea.value = inviteUrl;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    setInviteLinkCopied(true);
+    window.setTimeout(() => setInviteLinkCopied(false), 2500);
   };
 
   if (loading) return <div>Se încarcă modulul de administrare...</div>;
@@ -214,12 +243,63 @@ export const AdminDashboard: React.FC = () => {
           </button>
         </form>
 
-        {lastInviteToken && (
-          <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '0.375rem', fontSize: '0.875rem' }}>
-            <strong>Link activare generat (copiază pentru testare):</strong>
-            <p style={{ wordBreak: 'break-all', marginTop: '0.25rem' }}>
-              {window.location.origin}/register?token={lastInviteToken}
+        {inviteUrl && (
+          <div
+            style={{
+              marginTop: '1rem',
+              padding: '0.875rem',
+              /* Culori bazate pe variabilele temei, ca linkul să fie vizibil
+                 și pe light, și pe dark mode (înainte era alb pe albastru deschis) */
+              backgroundColor: 'var(--bg-subtle)',
+              border: '2px solid var(--primary)',
+              borderRadius: '0.5rem',
+              fontSize: '0.875rem',
+              color: 'var(--text-main)',
+            }}
+          >
+            <strong style={{ display: 'block', color: 'var(--text-main)' }}>
+              Link de activare generat
+            </strong>
+            <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0', fontSize: '0.8rem' }}>
+              Trimite acest link elevului. Expiră în 7 zile.
             </p>
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.5rem',
+                alignItems: 'stretch',
+                marginTop: '0.625rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <input
+                readOnly
+                value={inviteUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                onClick={(e) => e.currentTarget.select()}
+                aria-label="Link de activare"
+                className="input-field"
+                style={{
+                  flex: '1 1 260px',
+                  minWidth: 0,
+                  fontFamily: 'monospace',
+                  fontSize: '0.8rem',
+                  backgroundColor: 'var(--bg-main)',
+                  color: 'var(--text-main)',
+                  borderColor: 'var(--border)',
+                  cursor: 'text',
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleCopyInviteLink}
+                className={`btn ${inviteLinkCopied ? 'btn-outline' : 'btn-primary'}`}
+                style={{ whiteSpace: 'nowrap', gap: '0.375rem', flexShrink: 0 }}
+              >
+                {inviteLinkCopied ? <Check size={16} /> : <Copy size={16} />}
+                {inviteLinkCopied ? 'Copiat!' : 'Copiază linkul'}
+              </button>
+            </div>
           </div>
         )}
       </div>

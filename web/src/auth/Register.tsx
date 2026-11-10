@@ -33,9 +33,7 @@ export const Register: React.FC = () => {
         }),
       });
       setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 2500);
+      // Nu mai redirectăm automat - lăsăm utilizatorul să citească mesajul
     } catch (err: any) {
       setError(err.message || 'Înregistrarea a eșuat. Verificați tokenul de invitație.');
     } finally {
@@ -61,8 +59,19 @@ export const Register: React.FC = () => {
         </div>
 
         {success ? (
-          <div style={{ padding: '1rem', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '0.375rem', textAlign: 'center' }}>
-            Contul a fost creat cu succes! Verificați emailul pentru confirmare. Redirecționare la conectare...
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ padding: '1rem', backgroundColor: 'var(--bg-success-subtle, #dcfce7)', color: 'var(--success, #166534)', borderRadius: '0.375rem', textAlign: 'center' }}>
+              <strong>✅ Contul a fost creat cu succes!</strong>
+              <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem' }}>
+                Vă rugăm să verificați emailul pentru a confirma adresa înainte de a vă conecta.
+              </p>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+              Nu ați primit emailul? Verificați folderul Spam sau așteptați 1-2 minute.
+            </p>
+            <Link to="/login" className="btn btn-primary" style={{ textAlign: 'center' }}>
+              Mergeți la autentificare
+            </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
