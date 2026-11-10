@@ -6,23 +6,26 @@ import { Group, SchoolClass, Subject } from '../api/types';
 import { BookOpen, Plus, Search } from 'lucide-react';
 import { useMobile } from '../common/useMobile';
 
-const SUBJECT_THEMES: Record<string, { bg: string; bgDark: string; ill: string }> = {
-  MATEMATICĂ: { bg: '#dba3a1', bgDark: '#4a2524', ill: '/ill-math.png' },
-  FIZICĂ: { bg: '#daedd7', bgDark: '#203d24', ill: '/ill-physics.png' },
-  CHIMIE: { bg: '#bcdeed', bgDark: '#1a374a', ill: '/ill-chemistry.png' },
-  FRANCEZĂ: { bg: '#f8ded9', bgDark: '#4f2924', ill: '/ill-french.png' },
-  ROMÂNĂ: { bg: '#dba3a1', bgDark: '#4a2524', ill: '/ill-french.png' },
-  INFORMATICĂ: { bg: '#bcdeed', bgDark: '#1a374a', ill: '/ill-math.png' },
-  BIOLOGIE: { bg: '#daedd7', bgDark: '#203d24', ill: '/ill-physics.png' },
-  ISTORIE: { bg: '#f8ded9', bgDark: '#4f2924', ill: '/ill-french.png' },
-};
+// Paletă de culori pentru materii - se atribuie automat rotativ
+const COLOR_PALETTE = [
+  { bg: '#dba3a1', bgDark: '#4a2524', ill: '/ill-math.png' }, // roșu-roz
+  { bg: '#daedd7', bgDark: '#203d24', ill: '/ill-physics.png' }, // verde
+  { bg: '#bcdeed', bgDark: '#1a374a', ill: '/ill-chemistry.png' }, // albastru-cyan
+  { bg: '#f8ded9', bgDark: '#4f2924', ill: '/ill-french.png' }, // piersică
+  { bg: '#e8d5f2', bgDark: '#3d2547', ill: '/ill-math.png' }, // violet
+  { bg: '#fff4d9', bgDark: '#4a3d1a', ill: '/ill-physics.png' }, // galben-auriu
+  { bg: '#d9f2e8', bgDark: '#1a4a3d', ill: '/ill-chemistry.png' }, // turcoaz
+  { bg: '#f2d9e8', bgDark: '#4a1a3d', ill: '/ill-french.png' }, // roz-magenta
+];
 
+// Generează culori pe baza hash-ului numelui materiei
 const getSubjectTheme = (name: string) => {
-  const upper = name.toUpperCase();
-  for (const [key, val] of Object.entries(SUBJECT_THEMES)) {
-    if (upper.includes(key)) return val;
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return { bg: '#c8d1d9', bgDark: '#1e293b', ill: '' };
+  const index = Math.abs(hash) % COLOR_PALETTE.length;
+  return COLOR_PALETTE[index];
 };
 
 export const GroupsList: React.FC = () => {
@@ -206,61 +209,23 @@ export const GroupsList: React.FC = () => {
         </div>
       )}
 
-      {/* Lista de materii / grupuri */}
-      {filteredGroups.length === 0 ? (
-        /* Dacă nu sunt încă grupurile create în DB, oferim template-ul cu cele 4 materii colorate din referință */
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '1.25rem',
-        }}>
-          {[
-            { id: '1', name: 'Matematică', teacher: 'Prof. Chiteș Costel Dobre', theme: SUBJECT_THEMES.MATEMATICĂ },
-            { id: '2', name: 'Fizică', teacher: 'Prof. Tudorașcu Irina', theme: SUBJECT_THEMES.FIZICĂ },
-            { id: '3', name: 'Chimie', teacher: 'Prof. Marcu Mirela', theme: SUBJECT_THEMES.CHIMIE },
-            { id: '4', name: 'Franceză', teacher: 'Prof. Silvia Măgureanu', theme: SUBJECT_THEMES.FRANCEZĂ },
-          ].map((item) => (
-            <div
-              key={item.id}
-              className="mobile-subject-card"
-              style={{
-                backgroundColor: item.theme.bg,
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <div className="mobile-subject-info">
-                <h3 className="mobile-subject-title">{item.name}</h3>
-                <p className="mobile-subject-teacher">{item.teacher}</p>
-              </div>
-
-              {item.theme.ill && (
-                <img
-                  src={item.theme.ill}
-                  alt={item.name}
-                  className="mobile-subject-illustration"
-                />
-              )}
-
-              <div className="mobile-subject-actions">
-                <button type="button" className="mobile-subject-action-btn" title="Mesaje" aria-label="Mesaje">
-                  <img src="/action-chat.png" alt="Mesaje" className="mobile-subject-action-icon" />
-                </button>
-                <button type="button" className="mobile-subject-action-btn" title="Dosare" aria-label="Dosare">
-                  <img src="/action-files.png" alt="Dosare" className="mobile-subject-action-icon" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* Grid responsive unitar cu noul design (stil mobil & desktop modern) */
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '1.25rem',
-        }}>
-          {filteredGroups.map((group) => {
+      {/* Lista de materii / grupuri - dinamice din baza de date */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))',
+        gap: '1.25rem',
+      }}>
+        {filteredGroups.length === 0 ? (
+          <div style={{ 
+            gridColumn: '1 / -1', 
+            textAlign: 'center', 
+            padding: '3rem', 
+            color: 'var(--text-muted)' 
+          }}>
+            Nu s-au găsit materii. Directorul poate adăuga materii noi din panoul de administrare.
+          </div>
+        ) : (
+          filteredGroups.map((group) => {
             const theme = getSubjectTheme(group.name);
             return (
               <div
@@ -279,7 +244,7 @@ export const GroupsList: React.FC = () => {
                 >
                   <h3 className="mobile-subject-title">{group.name}</h3>
                   <p className="mobile-subject-teacher">
-                    Prof. titular asociat
+                    {group.teacher ? `${group.teacher.firstName} ${group.teacher.lastName}` : 'Fără profesor'}
                   </p>
                 </Link>
 
@@ -320,10 +285,9 @@ export const GroupsList: React.FC = () => {
                 </div>
               </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 };
-
