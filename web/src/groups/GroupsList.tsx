@@ -6,6 +6,25 @@ import { Group, SchoolClass, Subject } from '../api/types';
 import { BookOpen, Plus, Search } from 'lucide-react';
 import { useMobile } from '../common/useMobile';
 
+const SUBJECT_THEMES: Record<string, { bg: string; bgDark: string; ill: string }> = {
+  MATEMATICĂ: { bg: '#dba3a1', bgDark: '#4a2524', ill: '/ill-math.png' },
+  FIZICĂ: { bg: '#daedd7', bgDark: '#203d24', ill: '/ill-physics.png' },
+  CHIMIE: { bg: '#bcdeed', bgDark: '#1a374a', ill: '/ill-chemistry.png' },
+  FRANCEZĂ: { bg: '#f8ded9', bgDark: '#4f2924', ill: '/ill-french.png' },
+  ROMÂNĂ: { bg: '#dba3a1', bgDark: '#4a2524', ill: '/ill-french.png' },
+  INFORMATICĂ: { bg: '#bcdeed', bgDark: '#1a374a', ill: '/ill-math.png' },
+  BIOLOGIE: { bg: '#daedd7', bgDark: '#203d24', ill: '/ill-physics.png' },
+  ISTORIE: { bg: '#f8ded9', bgDark: '#4f2924', ill: '/ill-french.png' },
+};
+
+const getSubjectTheme = (name: string) => {
+  const upper = name.toUpperCase();
+  for (const [key, val] of Object.entries(SUBJECT_THEMES)) {
+    if (upper.includes(key)) return val;
+  }
+  return { bg: '#c8d1d9', bgDark: '#1e293b', ill: '' };
+};
+
 export const GroupsList: React.FC = () => {
   const { user } = useAuth();
   const isMobile = useMobile();
@@ -189,58 +208,119 @@ export const GroupsList: React.FC = () => {
 
       {/* Lista de materii / grupuri */}
       {filteredGroups.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <p style={{ color: 'var(--text-muted)' }}>Nu sunteți înscris în niciun grup de materie în acest moment.</p>
+        /* Dacă nu sunt încă grupurile create în DB, oferim template-ul cu cele 4 materii colorate din referință */
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {[
+            { id: '1', name: 'Matematică', teacher: 'Prof. Chiteș Costel Dobre', theme: SUBJECT_THEMES.MATEMATICĂ },
+            { id: '2', name: 'Fizică', teacher: 'Prof. Tudorașcu Irina', theme: SUBJECT_THEMES.FIZICĂ },
+            { id: '3', name: 'Chimie', teacher: 'Prof. Marcu Mirela', theme: SUBJECT_THEMES.CHIMIE },
+            { id: '4', name: 'Franceză', teacher: 'Prof. Silvia Măgureanu', theme: SUBJECT_THEMES.FRANCEZĂ },
+          ].map((item) => (
+            <div
+              key={item.id}
+              className="mobile-subject-card"
+              style={{
+                backgroundColor: item.theme.bg,
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <div className="mobile-subject-info">
+                <h3 className="mobile-subject-title">{item.name}</h3>
+                <p className="mobile-subject-teacher">{item.teacher}</p>
+              </div>
+
+              {item.theme.ill && (
+                <img
+                  src={item.theme.ill}
+                  alt={item.name}
+                  className="mobile-subject-illustration"
+                />
+              )}
+
+              <div className="mobile-subject-actions">
+                <button type="button" className="mobile-subject-action-btn" title="Mesaje" aria-label="Mesaje">
+                  <img src="/action-chat.png" alt="Mesaje" className="mobile-subject-action-icon" />
+                </button>
+                <button type="button" className="mobile-subject-action-btn" title="Dosare" aria-label="Dosare">
+                  <img src="/action-files.png" alt="Dosare" className="mobile-subject-action-icon" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         /* Grid responsive unitar cu noul design (stil mobil & desktop modern) */
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '1rem',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: '1.25rem',
         }}>
-          {filteredGroups.map((group) => (
-            <div key={group.id} className="mobile-subject-card">
-              <Link
-                to={`/groups/${group.id}`}
-                className="mobile-subject-info"
-                style={{ textDecoration: 'none', color: 'inherit' }}
+          {filteredGroups.map((group) => {
+            const theme = getSubjectTheme(group.name);
+            return (
+              <div
+                key={group.id}
+                className="mobile-subject-card"
+                style={{
+                  backgroundColor: theme.bg,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
               >
-                <h3 className="mobile-subject-title">{group.name}</h3>
-                <p className="mobile-subject-teacher">
-                  Prof. titular asociat
-                </p>
-              </Link>
-
-              <div className="mobile-subject-actions">
                 <Link
                   to={`/groups/${group.id}`}
-                  className="mobile-subject-action-btn"
-                  title="Discuții & Mesaje"
-                  aria-label="Mesaje"
+                  className="mobile-subject-info"
+                  style={{ textDecoration: 'none', color: 'inherit' }}
                 >
-                  <img
-                    src="/action-chat.png"
-                    alt="Mesaje"
-                    className="mobile-subject-action-icon"
-                  />
+                  <h3 className="mobile-subject-title">{group.name}</h3>
+                  <p className="mobile-subject-teacher">
+                    Prof. titular asociat
+                  </p>
                 </Link>
 
-                <Link
-                  to={`/groups/${group.id}`}
-                  className="mobile-subject-action-btn"
-                  title="Materiale & Dosare"
-                  aria-label="Dosare"
-                >
+                {theme.ill && (
                   <img
-                    src="/action-files.png"
-                    alt="Dosare"
-                    className="mobile-subject-action-icon"
+                    src={theme.ill}
+                    alt={group.name}
+                    className="mobile-subject-illustration"
                   />
-                </Link>
+                )}
+
+                <div className="mobile-subject-actions">
+                  <Link
+                    to={`/groups/${group.id}`}
+                    className="mobile-subject-action-btn"
+                    title="Discuții & Mesaje"
+                    aria-label="Mesaje"
+                  >
+                    <img
+                      src="/action-chat.png"
+                      alt="Mesaje"
+                      className="mobile-subject-action-icon"
+                    />
+                  </Link>
+
+                  <Link
+                    to={`/groups/${group.id}`}
+                    className="mobile-subject-action-btn"
+                    title="Materiale & Dosare"
+                    aria-label="Dosare"
+                  >
+                    <img
+                      src="/action-files.png"
+                      alt="Dosare"
+                      className="mobile-subject-action-icon"
+                    />
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

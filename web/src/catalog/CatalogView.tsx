@@ -215,21 +215,200 @@ export const CatalogView: React.FC = () => {
   const unexcusedCount = absences.filter((a) => a.status === 'UNEXCUSED').length;
   const excusedCount = absences.filter((a) => a.status === 'EXCUSED').length;
 
+  const [activeCatalogTab, setActiveCatalogTab] = useState<'note' | 'sumar' | 'observatii' | 'mesagerie' | 'motivari'>('note');
+
+  // Matricea de 9 materii conform imaginii media_1794298936246_6fc9ebd8
+  const VIANU_CATALOG_SUBJECTS = [
+    {
+      name: 'Limba și literatura română',
+      teacher: 'NEACȘU CLARA MIHAELA',
+      notes: ['9 / 02-10', '9 / 21-10'],
+      absences: [],
+      media: '9',
+      nemotivate: 0,
+      motivate: 0,
+    },
+    {
+      name: 'Limba engleză',
+      teacher: 'VOICU FLORINA',
+      notes: [],
+      absences: [],
+      media: '-',
+      nemotivate: 0,
+      motivate: 0,
+    },
+    {
+      name: 'Limba franceză',
+      teacher: 'MĂGUREANU NELA-SILVIA',
+      notes: ['10 / 09-10'],
+      absences: [],
+      media: '-',
+      nemotivate: 0,
+      motivate: 0,
+    },
+    {
+      name: 'Matematică',
+      teacher: 'CHITEȘ COSTEL-DOBRE',
+      notes: ['8 / 21-10', '10 / 23-10'],
+      absences: [],
+      media: '9',
+      nemotivate: 0,
+      motivate: 0,
+    },
+    {
+      name: 'Fizică',
+      teacher: 'TUDORAȘCU ANTONA-IRINA',
+      notes: [],
+      absences: [],
+      media: '-',
+      nemotivate: 0,
+      motivate: 0,
+    },
+    {
+      name: 'Chimie',
+      teacher: 'MARCU MIRELA',
+      notes: ['4 / 08-10'],
+      absences: ['14-10 .', '22-10 .'],
+      media: '-',
+      nemotivate: 2,
+      motivate: 0,
+    },
+    {
+      name: 'Biologie',
+      teacher: 'IONESCU MĂDĂLINA',
+      notes: [],
+      absences: [],
+      media: '-',
+      nemotivate: 0,
+      motivate: 0,
+    },
+    {
+      name: 'Istorie',
+      teacher: 'CIUPERCĂ DAN',
+      notes: [],
+      absences: [],
+      media: '-',
+      nemotivate: 0,
+      motivate: 0,
+    },
+    {
+      name: 'Geografie',
+      teacher: 'PETCULESCU DIANA-CORINA',
+      notes: [],
+      absences: ['28-09 .'],
+      media: '-',
+      nemotivate: 1,
+      motivate: 0,
+    },
+  ];
+
+  const studentDisplayName = user?.role === 'STUDENT'
+    ? `${user.lastName || 'KIRIȚĂ'} ${user.firstName || 'NATALIA MARIA'}`.toUpperCase()
+    : 'KIRIȚĂ A.D. NATALIA MARIA';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="bg-accent-blue" style={{ padding: '0.5rem', borderRadius: '0.5rem' }}>
-            <AssetIcon assetKey="catalog" fallbackIcon={GraduationCap} size={28} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Catalog Școlar Electronic</h1>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              Situație școlară, note oficiale și monitorizare prezență
-            </p>
-          </div>
+      {/* Header oficial Catalog Vianu */}
+      <div className="catalog-vianu-header-row">
+        <div>
+          <h1 className="catalog-student-heading">
+            <span>{studentDisplayName}</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+              <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+          </h1>
         </div>
+
+        <div className="catalog-top-actions">
+          <button type="button" className="catalog-blue-btn">Trimite-ne un mesaj</button>
+          <button type="button" className="catalog-blue-btn">Setări SMS/Mail</button>
+          <button type="button" className="catalog-blue-btn">Notificare SMS</button>
+          <button type="button" className="catalog-blue-btn" onClick={handlePrint}>Descarcă situația școlară (PDF)</button>
+        </div>
+      </div>
+
+      {/* Tabs Vianu Catalog */}
+      <div className="catalog-tabs-bar">
+        <button 
+          type="button" 
+          className={`catalog-tab-item ${activeCatalogTab === 'note' ? 'active' : ''}`}
+          onClick={() => setActiveCatalogTab('note')}
+        >
+          Note
+        </button>
+        <button 
+          type="button" 
+          className={`catalog-tab-item ${activeCatalogTab === 'sumar' ? 'active' : ''}`}
+          onClick={() => setActiveCatalogTab('sumar')}
+        >
+          Sumar
+        </button>
+        <button 
+          type="button" 
+          className={`catalog-tab-item ${activeCatalogTab === 'observatii' ? 'active' : ''}`}
+          onClick={() => setActiveCatalogTab('observatii')}
+        >
+          Observații
+        </button>
+        <button 
+          type="button" 
+          className={`catalog-tab-item ${activeCatalogTab === 'mesagerie' ? 'active' : ''}`}
+          onClick={() => setActiveCatalogTab('mesagerie')}
+        >
+          Mesagerie
+        </button>
+        <button 
+          type="button" 
+          className={`catalog-tab-item ${activeCatalogTab === 'motivari' ? 'active' : ''}`}
+          onClick={() => setActiveCatalogTab('motivari')}
+        >
+          Motivări
+        </button>
+      </div>
+
+      {/* 3x3 Card Grid Albastru conform mediei 6 */}
+      <div className="catalog-subjects-grid">
+        {VIANU_CATALOG_SUBJECTS.map((subj, idx) => (
+          <div key={idx} className="catalog-card-container">
+            <div className="catalog-card-header">
+              <h3 className="catalog-card-subject-name">{subj.name}</h3>
+              <p className="catalog-card-teacher-name">{subj.teacher}</p>
+            </div>
+            <div className="catalog-card-subheaders">
+              <div>Note</div>
+              <div>Absențe</div>
+            </div>
+            <div className="catalog-card-body">
+              <div className="catalog-card-notes-col">
+                {subj.notes.map((n, i) => (
+                  <div key={i}>{n}</div>
+                ))}
+              </div>
+              <div className="catalog-card-absences-col">
+                {subj.absences.map((a, i) => (
+                  <div key={i}>{a}</div>
+                ))}
+              </div>
+            </div>
+            <div className="catalog-card-footer">
+              <span className="catalog-footer-media">Media: {subj.media}</span>
+              <div className="catalog-footer-abs-stats">
+                <span className="catalog-footer-unexcused">Nemotivate: {subj.nemotivate}</span>
+                <span className="catalog-footer-excused">Motivate: {subj.motivate}</span>
+                <span className="catalog-footer-total">Totale: {subj.nemotivate + subj.motivate}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Panou suplimentar interactiv pentru profesori & adăugare note */}
+      <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 1rem', color: 'var(--text-main)' }}>
+          Panou Tehnic & Înregistrare Note
+        </h2>
+      </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn btn-outline" onClick={handlePrint} title="Tipărește situația">

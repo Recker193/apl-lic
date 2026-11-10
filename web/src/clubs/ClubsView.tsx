@@ -12,9 +12,49 @@ import {
   Check, 
   LogOut, 
   Trash2, 
-  Clock 
+  Clock,
+  Info
 } from 'lucide-react';
 import { formatDateTime24 } from '../common/dateUtils';
+
+const VIANU_CLUBS_CATALOG = [
+  {
+    id: 'engineering',
+    name: 'Vianu Engineering',
+    img: '/club-engineering.png',
+    description: 'Dezvoltare hardware, robotică FTC și proiecte avansate de inginerie mecatronică.',
+  },
+  {
+    id: 'teded',
+    name: 'TED-Ed Clubs Vianu',
+    img: '/club-teded.png',
+    description: 'Dezvoltarea abilităților de public speaking, prezentare de idei inovatoare și dezbateri constructive.',
+  },
+  {
+    id: 'vianumun',
+    name: 'VianuMUN 2027',
+    img: '/club-vianumun.png',
+    description: 'Model United Nations la Vianu. Simulare a comisiilor internaționale ONU și diplomație.',
+  },
+  {
+    id: 'photography',
+    name: 'Vianu Photography',
+    img: '/club-photography.png',
+    description: 'Artă fotografică, editare digitală, expoziții școlare și acoperirea evenimentelor din liceu.',
+  },
+  {
+    id: 'theatre',
+    name: 'Trupa Vianu',
+    img: '/club-theatre.png',
+    description: 'Trupa oficială de teatru a colegiului: actorie, scenografie, piese clasice și contemporane.',
+  },
+  {
+    id: 'art',
+    name: 'Art & Sculpture Club',
+    img: '/club-art.png',
+    description: 'Arte vizuale, modelaj, pictură și explorare creativă.',
+  },
+];
 
 export const ClubsView: React.FC = () => {
   const { user } = useAuth();
@@ -95,25 +135,134 @@ export const ClubsView: React.FC = () => {
     }
   };
 
+  const [selectedClubInfo, setSelectedClubInfo] = useState<typeof VIANU_CLUBS_CATALOG[0] | null>(null);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="bg-accent-blue" style={{ padding: '0.5rem', borderRadius: '0.5rem' }}>
-            <AssetIcon assetKey="clubs" fallbackIcon={Compass} size={28} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* Header conform imaginii media_1794298936238_bd355ae4 */}
+      <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+        <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: 0, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
+          Cluburi și oportunități
+        </h1>
+      </div>
+
+      {/* Banner Voluntariat RMI >> 20-27 februarie cu Link înscrieri */}
+      <div className="clubs-banner-volunteer">
+        <div className="clubs-volunteer-pill">
+          <div className="clubs-volunteer-icon">!</div>
+          <span>Voluntariat RMI &gt;&gt; 20-27 februarie</span>
+        </div>
+        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+          <span style={{ color: 'var(--text-muted)' }}>Link înscrieri: </span>
+          <a 
+            href="https://forms.gle/n5sSMgiBWTKruzbW9" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ color: '#0284c7', textDecoration: 'underline' }}
+          >
+            https://forms.gle/n5sSMgiBWTKruzbW9
+          </a>
+        </div>
+      </div>
+
+      {/* Secțiunea "Cluburile tale" + "Solicită înființarea unui nou club!" */}
+      <div className="clubs-user-section">
+        <div className="clubs-user-list">
+          <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+            Cluburile tale:
           </div>
-          <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Cluburi Școlare & Activități</h1>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              Înscrieri la cluburi (Șah, Debate, Robotică etc.) și activități de weekend
-            </p>
+          <div style={{ fontSize: '0.88rem', color: 'var(--text-main)' }}>
+            <strong>1. Sparktech</strong> <span style={{ color: 'var(--text-muted)' }}>(te-ai alăturat 15 oct. 2025)</span>
+          </div>
+          <div style={{ fontSize: '0.88rem', color: 'var(--text-main)' }}>
+            <strong>2. VIANEWS</strong> <span style={{ color: 'var(--text-muted)' }}>(te-ai alăturat 21 sept. 2026)</span>
           </div>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-          <Plus size={16} /> Înființează Club
+        <button 
+          type="button" 
+          onClick={() => setShowAddModal(true)}
+          className="clubs-request-action"
+        >
+          <img src="/icon-new-club-request.png" alt="Solicită club" className="clubs-request-icon" />
+          <span>Solicită înființarea unui nou club!</span>
         </button>
+      </div>
+
+      {/* Grid 2-coloane cu cardurile rotunde de cluburi Vianu */}
+      <div className="clubs-badges-grid">
+        {VIANU_CLUBS_CATALOG.map((item) => (
+          <div key={item.id} className="club-badge-card">
+            <button 
+              type="button" 
+              className="club-badge-info-btn"
+              title={`Detalii ${item.name}`}
+              onClick={() => setSelectedClubInfo(item)}
+            >
+              <Info size={20} />
+            </button>
+            <img 
+              src={item.img} 
+              alt={item.name} 
+              className="club-badge-circle"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Modal info detaliat club */}
+      {selectedClubInfo && (
+        <div className="modal-overlay" onClick={() => setSelectedClubInfo(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px', textAlign: 'center', padding: '1.75rem' }}>
+            <img 
+              src={selectedClubInfo.img} 
+              alt={selectedClubInfo.name} 
+              style={{ width: '120px', height: '120px', borderRadius: '50%', margin: '0 auto 1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} 
+            />
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 0.5rem', color: 'var(--text-main)' }}>
+              {selectedClubInfo.name}
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 1.25rem' }}>
+              {selectedClubInfo.description}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-outline" 
+                onClick={() => setSelectedClubInfo(null)}
+              >
+                Închide
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => {
+                  alert(`Cererea ta de înscriere la ${selectedClubInfo.name} a fost trimisă coordonatorului!`);
+                  setSelectedClubInfo(null);
+                }}
+              >
+                Înscrie-te la club
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lista completă cu activitățile și cluburile dinamice din baza de date */}
+      <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
+              Toate cluburile din școală
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+              Gestiune și înscrieri directe
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+            <Plus size={16} /> Înființează Club
+          </button>
+        </div>
       </div>
 
       {/* Grid Cluburi */}
