@@ -124,11 +124,19 @@ export const Profile: React.FC = () => {
           boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
           overflow: 'hidden',
           marginBottom: '1.15rem',
+          position: 'relative',
         }}>
           <img
             src="/avatar-purple.png"
             alt={fullName}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+            }}
           />
         </div>
 
