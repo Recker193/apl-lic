@@ -61,11 +61,11 @@ export class GroupsService {
   async update(
     user: AuthenticatedUser,
     id: string,
-    input: { name?: string; teacherId?: string },
+    input: { name?: string; teacherId?: string; classId?: string },
   ) {
     const existing = await this.access.assertGroupTeacher(user, id);
 
-    if (input.teacherId && user.role !== UserRole.ADMIN) {
+    if ((input.teacherId || input.classId) && user.role !== UserRole.ADMIN) {
       throw new ForbiddenException();
     }
 
@@ -78,12 +78,22 @@ export class GroupsService {
       }
     }
 
+    if (input.classId) {
+      const newClass = await this.prisma.schoolClass.findFirst({
+        where: { id: input.classId, schoolId: user.schoolId },
+      });
+      if (!newClass) {
+        throw new NotFoundException('Clasa nu a fost găsită');
+      }
+    }
+
     const updated = await this.prisma.$transaction(async (tx) => {
       const group = await tx.subjectGroup.update({
         where: { id },
         data: {
           ...(input.name ? { name: input.name } : {}),
           ...(input.teacherId ? { teacherId: input.teacherId } : {}),
+          ...(input.classId ? { classId: input.classId } : {}),
         },
       });
 
@@ -98,6 +108,30 @@ export class GroupsService {
             canPost: true,
           },
         });
+      }
+
+      // Dacă s-a schimbat clasa de predare, sincronizăm elevii noii clase în grupul materiei
+      if (input.classId && input.classId !== existing.classId) {
+        // Ștergem membrii elevi anteriori
+        await tx.groupMembership.deleteMany({
+          where: { groupId: id, membershipRole: MembershipRole.STUDENT },
+        });
+
+        // Adăugăm elevii noii clase
+        const newClassStudents = await tx.classMembership.findMany({
+          where: { classId: input.classId },
+        });
+
+        for (const membership of newClassStudents) {
+          await tx.groupMembership.create({
+            data: {
+              groupId: id,
+              userId: membership.studentId,
+              membershipRole: MembershipRole.STUDENT,
+              canPost: false,
+            },
+          });
+        }
       }
 
       return group;

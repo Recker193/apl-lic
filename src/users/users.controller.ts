@@ -62,4 +62,13 @@ export class UsersController {
   ) {
     return this.usersService.setActive(user, id, dto.isActive);
   }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  deleteUser(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.usersService.deleteUser(user, id);
+  }
 }

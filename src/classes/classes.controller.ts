@@ -29,6 +29,14 @@ class AddStudentDto {
   studentId!: string;
 }
 
+class TransferStudentDto {
+  @IsUUID()
+  studentId!: string;
+
+  @IsUUID()
+  targetClassId!: string;
+}
+
 @Controller('classes')
 @UseGuards(RolesGuard)
 export class ClassesController {
@@ -62,6 +70,21 @@ export class ClassesController {
     @Body() dto: AddStudentDto,
   ) {
     return this.classesService.addStudent(user, id, dto.studentId);
+  }
+
+  @Post(':id/students/transfer')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  transferStudent(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TransferStudentDto,
+  ) {
+    return this.classesService.transferStudent(
+      user,
+      id,
+      dto.targetClassId,
+      dto.studentId,
+    );
   }
 
   @Delete(':id/students/:studentId')

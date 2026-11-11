@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { useAuth } from './AuthContext';
 import { User } from '../api/types';
+import { Eye, EyeOff } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { setUser } = useAuth();
@@ -73,13 +75,35 @@ export const Login: React.FC = () => {
             <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
               Parolă
             </label>
-            <input
-              type="password"
-              required
-              className="input-field"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                className="input-field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ paddingRight: '2.5rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0,
+                }}
+                title={showPassword ? 'Ascunde parola' : 'Arată parola'}
+                aria-label={showPassword ? 'Ascunde parola' : 'Arată parola'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>

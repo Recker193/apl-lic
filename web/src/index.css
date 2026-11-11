@@ -2122,17 +2122,17 @@ main > div,
 .catalog-student-heading {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1e3a8a;
+  color: var(--primary, #1e3a8a);
   letter-spacing: -0.01em;
-  border-bottom: 2px solid #93c5fd;
+  border-bottom: 2px solid var(--primary, #93c5fd);
   padding-bottom: 0.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 [data-theme='dark'] .catalog-student-heading {
-  color: #93c5fd;
-  border-bottom-color: #1e3a8a;
+  color: var(--primary, #93c5fd);
+  border-bottom-color: var(--primary, #1e3a8a);
 }
 .catalog-top-actions {
   display: flex;
@@ -2141,9 +2141,9 @@ main > div,
   min-width: 220px;
 }
 .catalog-blue-btn {
-  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  background: var(--primary, linear-gradient(180deg, #0284c7 0%, #0369a1 100%));
   color: #ffffff;
-  border: 1px solid #0284c7;
+  border: 1px solid var(--primary, #0284c7);
   border-radius: 6px;
   padding: 0.45rem 1rem;
   font-size: 0.85rem;
@@ -2168,7 +2168,7 @@ main > div,
 .catalog-tab-item {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   cursor: pointer;
   background: none;
   border: none;
@@ -2177,10 +2177,10 @@ main > div,
   transition: color 0.15s ease;
 }
 .catalog-tab-item.active {
-  color: #0369a1;
+  color: var(--primary, #0369a1);
 }
 [data-theme='dark'] .catalog-tab-item.active {
-  color: #38bdf8;
+  color: var(--primary, #38bdf8);
 }
 .catalog-tab-item.active::after {
   content: '';
@@ -2189,11 +2189,11 @@ main > div,
   left: 0;
   right: 0;
   height: 3px;
-  background-color: #0369a1;
+  background-color: var(--primary, #0369a1);
   border-radius: 2px;
 }
 [data-theme='dark'] .catalog-tab-item.active::after {
-  background-color: #38bdf8;
+  background-color: var(--primary, #38bdf8);
 }
 
 /* 3x3 Card Grid Blue */
@@ -2385,6 +2385,34 @@ main > div,
 [data-theme='dark'] .school-ribbon-dynamic {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
+
+/* ═══════════════════════════════════════════════
+   INVITE BOX CONTRAST (Light & Dark Mode)
+   Caseta neagră și text alb pe dark mode, contrast identic
+═══════════════════════════════════════════════ */
+.invite-box-contrast {
+  background-color: #f1f5f9;
+  border: 2px solid var(--primary);
+  color: #0f172a;
+}
+.invite-input-contrast {
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+
+[data-theme='dark'] .invite-box-contrast {
+  background-color: #09090b !important;
+  border: 2px solid var(--primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+[data-theme='dark'] .invite-input-contrast {
+  background-color: #18181b !important;
+  color: #ffffff !important;
+  border: 1px solid #3f3f46 !important;
+}
+
 
 
 

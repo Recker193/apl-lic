@@ -51,11 +51,46 @@ export class ClassesService {
       where: { id: studentId, schoolId: user.schoolId, role: 'STUDENT' },
     });
     if (!student) throw new NotFoundException();
-    return this.prisma.classMembership.upsert({
-      where: { studentId_classId: { studentId, classId: schoolClass.id } },
-      update: {},
-      create: { studentId, classId: schoolClass.id },
+
+    // Dacă este deja înscris în altă clasă, îl transferăm (eliminăm vechea apartenență)
+    await this.prisma.classMembership.deleteMany({
+      where: { studentId },
     });
+
+    const membership = await this.prisma.classMembership.create({
+      data: { studentId, classId: schoolClass.id },
+    });
+
+    // Îl adăugăm automat și în grupurile asociate clasei
+    const classGroups = await this.prisma.subjectGroup.findMany({
+      where: { classId: schoolClass.id },
+    });
+    for (const group of classGroups) {
+      await this.prisma.groupMembership.upsert({
+        where: {
+          groupId_userId: { groupId: group.id, userId: studentId },
+        },
+        update: {},
+        create: {
+          groupId: group.id,
+          userId: studentId,
+          membershipRole: 'STUDENT',
+          canPost: false,
+        },
+      });
+    }
+
+    return membership;
+  }
+
+  async transferStudent(
+    user: AuthenticatedUser,
+    fromClassId: string,
+    toClassId: string,
+    studentId: string,
+  ) {
+    await this.removeStudent(user, fromClassId, studentId);
+    return this.addStudent(user, toClassId, studentId);
   }
 
   async removeStudent(
@@ -64,6 +99,21 @@ export class ClassesService {
     studentId: string,
   ) {
     const schoolClass = await this.get(user, classId);
+
+    // Eliminăm din grupurile clasei vechi
+    const classGroups = await this.prisma.subjectGroup.findMany({
+      where: { classId: schoolClass.id },
+    });
+    const groupIds = classGroups.map((g) => g.id);
+    if (groupIds.length > 0) {
+      await this.prisma.groupMembership.deleteMany({
+        where: {
+          userId: studentId,
+          groupId: { in: groupIds },
+        },
+      });
+    }
+
     return this.prisma.classMembership.deleteMany({
       where: { classId: schoolClass.id, studentId },
     });

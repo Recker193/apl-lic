@@ -49,6 +49,10 @@ class UpdateGroupDto {
   @IsOptional()
   @IsUUID()
   teacherId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  classId?: string;
 }
 
 @Controller('groups')

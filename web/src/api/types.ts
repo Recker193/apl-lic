@@ -7,6 +7,14 @@ export interface User {
   lastName: string;
   role: UserRole;
   schoolId: string;
+  isActive?: boolean;
+  classMemberships?: {
+    class: {
+      id: string;
+      name: string;
+      schoolYear: string;
+    };
+  }[];
   class?: {
     id: string;
     name: string;

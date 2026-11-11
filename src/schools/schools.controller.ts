@@ -30,6 +30,12 @@ export class SchoolsController {
     });
   }
 
+  // Alias compatibil pentru apelurile frontend /api/v1/admin/school
+  @Get('../admin/school')
+  async getSchoolCompat(@CurrentUser() user: AuthenticatedUser) {
+    return this.me(user);
+  }
+
   @Patch('me')
   @Roles(UserRole.ADMIN)
   async update(

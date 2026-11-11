@@ -25,6 +25,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { AssetIcon } from '../common/AssetIcon';
+import { SubjectEvolutionModal } from './SubjectEvolutionModal';
 
 export const CatalogView: React.FC = () => {
   const { user } = useAuth();
@@ -216,6 +217,11 @@ export const CatalogView: React.FC = () => {
   const excusedCount = absences.filter((a) => a.status === 'EXCUSED').length;
 
   const [activeCatalogTab, setActiveCatalogTab] = useState<'note' | 'sumar' | 'observatii' | 'mesagerie' | 'motivari'>('note');
+  const [selectedSubjectModal, setSelectedSubjectModal] = useState<{
+    subjectName: string;
+    teacherName: string;
+    grades: GradeEntry[];
+  } | null>(null);
 
   // Calculează datele dinamice per materie/grup
   const subjectData = groups.map((group) => {
@@ -228,6 +234,7 @@ export const CatalogView: React.FC = () => {
     const excused = groupAbsences.filter((a) => a.status === 'EXCUSED').length;
 
     return {
+      groupId: group.id,
       name: group.subject?.name || group.name,
       teacher: group.teacher ? `${group.teacher.lastName || ''} ${group.teacher.firstName || ''}`.trim().toUpperCase() : 'N/A',
       notes: groupGrades.map((g) => `${g.value} / ${new Date(g.gradedAt).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}`),
@@ -235,6 +242,7 @@ export const CatalogView: React.FC = () => {
       media: average,
       nemotivate: unexcused,
       motivate: excused,
+      rawGrades: groupGrades,
     };
   });
 
@@ -306,10 +314,34 @@ export const CatalogView: React.FC = () => {
       {/* Card Grid dinamic pentru materii */}
       <div className="catalog-subjects-grid">
         {subjectData.length > 0 ? subjectData.map((subj, idx) => (
-          <div key={idx} className="catalog-card-container">
-            <div className="catalog-card-header">
-              <h3 className="catalog-card-subject-name">{subj.name}</h3>
-              <p className="catalog-card-teacher-name">{subj.teacher}</p>
+          <div 
+            key={idx} 
+            className="catalog-card-container card-interactive"
+            style={{ cursor: 'pointer' }}
+            onClick={() => setSelectedSubjectModal({
+              subjectName: subj.name,
+              teacherName: subj.teacher,
+              grades: subj.rawGrades,
+            })}
+            title="Apasă pentru grafic evoluție și calculator de medii"
+          >
+            <div className="catalog-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 className="catalog-card-subject-name">{subj.name}</h3>
+                <p className="catalog-card-teacher-name">{subj.teacher}</p>
+              </div>
+              <span 
+                style={{ 
+                  fontSize: '0.72rem', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.25)', 
+                  padding: '2px 8px', 
+                  borderRadius: '9999px',
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Grafic &amp; Calculator &gt;
+              </span>
             </div>
             <div className="catalog-card-subheaders">
               <div>Note</div>
@@ -342,6 +374,16 @@ export const CatalogView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal Evoluție & Calculator de Medii */}
+      {selectedSubjectModal && (
+        <SubjectEvolutionModal
+          subjectName={selectedSubjectModal.subjectName}
+          teacherName={selectedSubjectModal.teacherName}
+          grades={selectedSubjectModal.grades}
+          onClose={() => setSelectedSubjectModal(null)}
+        />
+      )}
 
       {/* Panou suplimentar interactiv pentru profesori & adăugare note */}
       <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
