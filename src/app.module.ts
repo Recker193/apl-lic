@@ -34,6 +34,7 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { TermsModule } from './terms/terms.module';
 import { TimetableModule } from './timetable/timetable.module';
 import { ClubsModule } from './clubs/clubs.module';
+import { FeedbackModule } from './feedback/feedback.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -70,6 +71,7 @@ import { UsersModule } from './users/users.module';
     HomeroomModule,
     TimetableModule,
     ClubsModule,
+    FeedbackModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

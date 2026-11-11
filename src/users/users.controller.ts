@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -29,6 +30,11 @@ export class UsersController {
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.toPublicUser(user);
+  }
+
+  @Get('teachers')
+  listTeachers(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.listTeachers(user);
   }
 
   @Get()

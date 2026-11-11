@@ -5,6 +5,7 @@ import { AccentColorPicker } from '../common/AccentColorPicker';
 import { apiClient } from '../api/client';
 import { User } from '../api/types';
 import { Palette, Moon, Sun, Settings, MessageCircle, LogOut } from 'lucide-react';
+import { SendMessageModal } from '../common/SendMessageModal';
 
 export const Profile: React.FC = () => {
   const { user, setUser, logout } = useAuth();
@@ -16,6 +17,7 @@ export const Profile: React.FC = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showDirectMessage, setShowDirectMessage] = useState(false);
 
   useEffect(() => {
     apiClient<{ name: string }>('/api/v1/admin/school')
@@ -190,6 +192,7 @@ export const Profile: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => setShowDirectMessage(true)}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -298,6 +301,14 @@ export const Profile: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Trimitere Mesaj Diriginte */}
+      <SendMessageModal
+        isOpen={showDirectMessage}
+        onClose={() => setShowDirectMessage(false)}
+        defaultRecipientName={homeroomName || 'Diriginte'}
+        contextTitle={`Mesaj către diriginte (${homeroomName || 'Diriginte'})`}
+      />
     </div>
   );
 };

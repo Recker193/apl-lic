@@ -19,8 +19,10 @@ import {
   Compass,
   MessageSquare,
   Sun,
-  Moon
+  Moon,
+  MessageSquareHeart
 } from 'lucide-react';
+import { FeedbackModal } from '../common/FeedbackModal';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -29,6 +31,7 @@ export const Layout: React.FC = () => {
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
   const [schoolName, setSchoolName] = useState<string>('');
+  const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (!user) return;
@@ -205,6 +208,22 @@ export const Layout: React.FC = () => {
           {/* Customizare temă / culori de accent */}
           <AccentColorPicker />
 
+          {/* Buton Trimitere Feedback */}
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="btn btn-outline"
+            style={{
+              width: '100%',
+              justifyContent: 'flex-start',
+              fontSize: '0.85rem',
+              color: '#d97706',
+              borderColor: 'rgba(217, 119, 6, 0.3)',
+            }}
+            title="Trimite sugestii sau feedback către Oktapod"
+          >
+            <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
+          </button>
+
           {/* Buton Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
@@ -237,6 +256,12 @@ export const Layout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Modal Feedback integrat */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+      />
     </div>
   );
 };

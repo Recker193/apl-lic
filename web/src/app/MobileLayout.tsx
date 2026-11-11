@@ -23,7 +23,9 @@ import {
   Menu,
   X,
   ChevronRight,
+  MessageSquareHeart,
 } from 'lucide-react';
+import { FeedbackModal } from '../common/FeedbackModal';
 
 /* ─────────────────────────────────────────────
    Tab-urile afișate în bara de jos — 6 taburi
@@ -84,6 +86,7 @@ export const MobileLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [schoolName, setSchoolName] = useState<string>('');
+  const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
 
   // Polling notificări
   useEffect(() => {
@@ -265,6 +268,17 @@ export const MobileLayout: React.FC = () => {
           </div>
 
           <button
+            onClick={() => {
+              setDrawerOpen(false);
+              setShowFeedbackModal(true);
+            }}
+            className="btn btn-outline mobile-drawer-footer-btn"
+            style={{ color: '#d97706', borderColor: 'rgba(217, 119, 6, 0.3)' }}
+          >
+            <MessageSquareHeart size={16} /> Trimite Feedback
+          </button>
+
+          <button
             onClick={toggleDarkMode}
             className="btn btn-outline mobile-drawer-footer-btn"
             title="Schimbă tema"
@@ -290,6 +304,12 @@ export const MobileLayout: React.FC = () => {
           </button>
         </div>
       </aside>
+
+      {/* Modal Feedback integrat în mobil */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+      />
     </div>
   );
 };

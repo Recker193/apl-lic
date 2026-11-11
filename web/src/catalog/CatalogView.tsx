@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { AssetIcon } from '../common/AssetIcon';
 import { SubjectEvolutionModal } from './SubjectEvolutionModal';
+import { SendMessageModal } from '../common/SendMessageModal';
 
 export const CatalogView: React.FC = () => {
   const { user } = useAuth();
@@ -57,6 +58,7 @@ export const CatalogView: React.FC = () => {
   const [absenceStudentId, setAbsenceStudentId] = useState('');
   const [absenceGroupId, setAbsenceGroupId] = useState('');
   const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showSendMessage, setShowSendMessage] = useState(false);
 
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
@@ -265,7 +267,13 @@ export const CatalogView: React.FC = () => {
         </div>
 
         <div className="catalog-top-actions">
-          <button type="button" className="catalog-blue-btn">Trimite-ne un mesaj</button>
+          <button
+            type="button"
+            className="catalog-blue-btn"
+            onClick={() => setShowSendMessage(true)}
+          >
+            Trimite-ne un mesaj
+          </button>
           <button type="button" className="catalog-blue-btn">Setări SMS/Mail</button>
           <button type="button" className="catalog-blue-btn">Notificare SMS</button>
           <button type="button" className="catalog-blue-btn" onClick={handlePrint}>Descarcă situația școlară (PDF)</button>
@@ -849,6 +857,14 @@ export const CatalogView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal trimitere mesaj */}
+      <SendMessageModal
+        isOpen={showSendMessage}
+        onClose={() => setShowSendMessage(false)}
+        defaultRecipientName={user?.homeroomTeacher ? `Prof. ${user.homeroomTeacher.firstName} ${user.homeroomTeacher.lastName}` : 'Conducerea Școlii / Diriginte'}
+        contextTitle="Trimite un mesaj către școală"
+      />
     </div>
   );
 };

@@ -3,28 +3,44 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Subject } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
-import { BookOpen, Plus, Search, BookMarked } from 'lucide-react';
+import { BookOpen, Plus, Search, BookMarked, UserCheck } from 'lucide-react';
 import { useMobile } from '../common/useMobile';
+import { SendMessageModal } from '../common/SendMessageModal';
 
 export const SubjectsView: React.FC = () => {
   const { user } = useAuth();
   const isMobile = useMobile();
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [teachersList, setTeachersList] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [messageTarget, setMessageTarget] = useState<{
+    open: boolean;
+    recipientName: string;
+    recipientEmail?: string;
+    contextTitle: string;
+  }>({
+    open: false,
+    recipientName: '',
+    contextTitle: '',
+  });
 
   const isAdmin = user?.role === 'ADMIN';
 
   const fetchSubjects = async () => {
     setLoading(true);
     try {
-      const data = await apiClient<Subject[]>('/api/v1/subjects');
-      setSubjects(data);
+      const [subjectsData, teachersData] = await Promise.all([
+        apiClient<Subject[]>('/api/v1/subjects'),
+        apiClient<any[]>('/api/v1/users/teachers').catch(() => []),
+      ]);
+      setSubjects(subjectsData);
+      setTeachersList(teachersData);
     } catch (err) {
-      console.error('Error fetching subjects', err);
+      console.error('Error fetching subjects and teachers', err);
     } finally {
       setLoading(false);
     }
@@ -99,7 +115,7 @@ export const SubjectsView: React.FC = () => {
       {/* Grid Materii */}
       {loading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Se încarcă materiile...
+          Se încarcă materiile și corpul profesoral...
         </div>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -107,53 +123,137 @@ export const SubjectsView: React.FC = () => {
         </div>
       ) : isMobile ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {filtered.map((s) => (
-            <div key={s.id} className="mobile-subject-card">
-              <div className="mobile-subject-info">
-                <h3 className="mobile-subject-title">{s.name}</h3>
-                <p className="mobile-subject-teacher">
-                  Profesor titular asignat
-                </p>
-              </div>
+          {filtered.map((s) => {
+            const relevantTeacher =
+              s.groups?.find((g) => user?.class?.id && g.classId === user.class.id)?.teacher ||
+              s.groups?.[0]?.teacher;
+            const teacherName = relevantTeacher
+              ? `Prof. ${relevantTeacher.firstName} ${relevantTeacher.lastName}`
+              : 'Profesor titular asignat';
 
-              <div className="mobile-subject-actions">
-                <button type="button" className="mobile-subject-action-btn" title="Mesaje" aria-label="Mesaje">
-                  <img src="/action-chat.png" alt="Mesaje" className="mobile-subject-action-icon" />
-                </button>
-                <button type="button" className="mobile-subject-action-btn" title="Dosare" aria-label="Dosare">
-                  <img src="/action-files.png" alt="Dosare" className="mobile-subject-action-icon" />
-                </button>
+            return (
+              <div key={s.id} className="mobile-subject-card">
+                <div className="mobile-subject-info">
+                  <h3 className="mobile-subject-title">{s.name}</h3>
+                  <p className="mobile-subject-teacher">
+                    {teacherName}
+                  </p>
+                </div>
+
+                <div className="mobile-subject-actions">
+                  <button
+                    type="button"
+                    className="mobile-subject-action-btn"
+                    title={`Trimite mesaj către ${teacherName}`}
+                    aria-label="Mesaje"
+                    onClick={() =>
+                      setMessageTarget({
+                        open: true,
+                        recipientName: teacherName,
+                        recipientEmail: relevantTeacher?.email,
+                        contextTitle: `Mesaj pentru ${s.name}`,
+                      })
+                    }
+                  >
+                    <img src="/action-chat.png" alt="Mesaje" className="mobile-subject-action-icon" />
+                  </button>
+                  <button type="button" className="mobile-subject-action-btn" title="Dosare & Resurse" aria-label="Dosare">
+                    <img src="/action-files.png" alt="Dosare" className="mobile-subject-action-icon" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
-          {filtered.map((s) => (
-            <div key={s.id} className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div className="bg-accent-blue" style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <BookMarked size={20} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+          {filtered.map((s) => {
+            const relevantTeacher =
+              s.groups?.find((g) => user?.class?.id && g.classId === user.class.id)?.teacher ||
+              s.groups?.[0]?.teacher;
+            const teacherName = relevantTeacher
+              ? `Prof. ${relevantTeacher.firstName} ${relevantTeacher.lastName}`
+              : 'Cadru didactic asignat';
+
+            return (
+              <div
+                key={s.id}
+                className="card card-interactive"
+                style={{
+                  padding: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  borderRadius: '12px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, flex: 1 }}>
+                  <div
+                    className="bg-accent-blue"
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <BookMarked size={22} />
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.25rem 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.name}
+                    </h3>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <UserCheck size={14} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {teacherName}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{
+                    padding: '0.45rem 0.75rem',
+                    fontSize: '0.8rem',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                  title={`Trimite mesaj către ${teacherName}`}
+                  onClick={() =>
+                    setMessageTarget({
+                      open: true,
+                      recipientName: teacherName,
+                      recipientEmail: relevantTeacher?.email,
+                      contextTitle: `Mesaj pentru ${s.name}`,
+                    })
+                  }
+                >
+                  <img src="/action-chat.png" alt="Mesaj" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                  <span>Mesaj</span>
+                </button>
               </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {s.name}
-                </h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  ID: {s.id.substring(0, 8)}...
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
+      {/* Modal Trimitere Mesaj non-anonim */}
+      <SendMessageModal
+        isOpen={messageTarget.open}
+        onClose={() => setMessageTarget((prev) => ({ ...prev, open: false }))}
+        defaultRecipientName={messageTarget.recipientName}
+        defaultRecipientEmail={messageTarget.recipientEmail}
+        contextTitle={messageTarget.contextTitle}
+      />
 
       {/* Modal Adăugare Materie */}
       {showAddModal && (

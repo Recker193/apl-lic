@@ -21,6 +21,30 @@ export class SubjectsController {
   list(@CurrentUser() user: AuthenticatedUser) {
     return this.prisma.subject.findMany({
       where: { schoolId: user.schoolId },
+      include: {
+        groups: {
+          select: {
+            id: true,
+            name: true,
+            classId: true,
+            teacherId: true,
+            teacher: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+            class: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: { name: 'asc' },
     });
   }

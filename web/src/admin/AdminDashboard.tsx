@@ -190,19 +190,15 @@ export const AdminDashboard: React.FC = () => {
         },
       );
       setLastInviteToken(res.token);
-<<<<<<< HEAD
       const url = `${window.location.origin}/register?token=${res.token}`;
       await copyToClipboard(url);
       setInviteLinkCopied(true);
       window.setTimeout(() => setInviteLinkCopied(false), 3000);
-      alert('Invitație creată cu succes! Link-ul de activare a fost copiat automat în clipboard.');
-=======
       alert(
         res.emailSent === false
-          ? 'Invitație creată, dar emailul nu a putut fi trimis. Trimiteți manual linkul afișat mai jos.'
-          : 'Invitație creată cu succes!',
+          ? 'Invitație creată, dar emailul nu a putut fi trimis automat. Link-ul de activare a fost COPIAT în clipboard și este afișat mai jos.'
+          : 'Invitație creată cu succes! Link-ul de activare a fost copiat automat în clipboard.',
       );
->>>>>>> d1a478b4e5aca397f156d980b876ccd337d248b8
       setInviteEmail('');
       setInviteClassId('');
       loadAll();

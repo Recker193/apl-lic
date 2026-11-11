@@ -189,6 +189,50 @@ export class UsersService {
     return { success: true, message: 'Utilizator șters cu succes.' };
   }
 
+  async listTeachers(actor: AuthenticatedUser) {
+    return this.prisma.user.findMany({
+      where: {
+        schoolId: actor.schoolId,
+        role: 'TEACHER',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        homeroomAssignments: {
+          select: {
+            class: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        taughtGroups: {
+          select: {
+            name: true,
+            subject: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            class: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
+  }
+
   async list(actor: AuthenticatedUser, role?: string) {
     const where: any = { schoolId: actor.schoolId };
     if (role) {

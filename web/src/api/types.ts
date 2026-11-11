@@ -156,6 +156,22 @@ export interface Subject {
   id: string;
   name: string;
   schoolId: string;
+  groups?: {
+    id: string;
+    name: string;
+    classId: string;
+    teacherId: string;
+    teacher?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string;
+    };
+    class?: {
+      id: string;
+      name: string;
+    };
+  }[];
 }
 
 export interface AuditLogItem {

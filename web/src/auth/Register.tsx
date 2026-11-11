@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { apiClient } from '../api/client';
 
 export const Register: React.FC = () => {
@@ -8,6 +9,9 @@ export const Register: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -18,6 +22,14 @@ export const Register: React.FC = () => {
     e.preventDefault();
     if (!token) {
       setError('Tokenul de invitație lipsește din link.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Parola trebuie să aibă minim 8 caractere.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Parolele introduse nu coincid.');
       return;
     }
     setError('');
@@ -38,7 +50,6 @@ export const Register: React.FC = () => {
       );
       setEmailSent(res.emailSent !== false);
       setSuccess(true);
-      // Nu mai redirectăm automat - lăsăm utilizatorul să citească mesajul
     } catch (err: any) {
       setError(err.message || 'Înregistrarea a eșuat. Verificați tokenul de invitație.');
     } finally {
@@ -132,14 +143,74 @@ export const Register: React.FC = () => {
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
                 Alegeți o parolă (minim 8 caractere)
               </label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                className="input-field"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  className="input-field"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{ paddingRight: '2.5rem' }}
+                  placeholder="Minim 8 caractere"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                  }}
+                  title={showPassword ? 'Ascunde parola' : 'Arată parola'}
+                  aria-label={showPassword ? 'Ascunde parola' : 'Arată parola'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
+                Confirmare parolă
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  className="input-field"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  style={{ paddingRight: '2.5rem' }}
+                  placeholder="Reintroduceți parola"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                  }}
+                  title={showConfirmPassword ? 'Ascunde parola' : 'Arată parola'}
+                  aria-label={showConfirmPassword ? 'Ascunde parola' : 'Arată parola'}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button type="submit" disabled={loading || !token} className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
