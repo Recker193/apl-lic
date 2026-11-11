@@ -132,8 +132,8 @@ export class GradesService {
   ) {
     await this.access.assertGroupTeacher(user, groupId);
 
-    // Verify student is a member of the group
-    const membership = await this.prisma.groupMembership.findUnique({
+    // Verify student is a member of the group, or auto-enroll if student is from the class
+    let membership = await this.prisma.groupMembership.findUnique({
       where: {
         groupId_userId: {
           groupId,
@@ -143,12 +143,27 @@ export class GradesService {
     });
 
     if (!membership) {
-      throw new BadRequestException('Student is not a member of this group');
+      // Verificăm dacă utilizatorul este elev în această școală
+      const validStudent = await this.prisma.user.findFirst({
+        where: { id: dto.studentId, schoolId: user.schoolId, role: 'STUDENT' },
+      });
+      if (!validStudent) {
+        throw new BadRequestException('Elevul selectat nu există sau nu este elev în această școală.');
+      }
+      // Înscriem automat elevul în grup pentru a permite acordarea notei
+      membership = await this.prisma.groupMembership.create({
+        data: {
+          groupId,
+          userId: dto.studentId,
+          membershipRole: 'STUDENT',
+          canPost: false,
+        },
+      });
     }
 
     // Get or find the appropriate term based on gradedAt date
     const gradedAt = new Date(dto.gradedAt);
-    const term = await this.prisma.term.findFirst({
+    let term = await this.prisma.term.findFirst({
       where: {
         schoolId: user.schoolId,
         status: TermStatus.OPEN,
@@ -158,8 +173,36 @@ export class GradesService {
     });
 
     if (!term) {
-      throw new BadRequestException('No open term found for the given date');
+      // Găsește orice semestru/trimestru deschis sau crează automat unul curent
+      term = await this.prisma.term.findFirst({
+        where: {
+          schoolId: user.schoolId,
+          status: TermStatus.OPEN,
+        },
+      });
+
+      if (!term) {
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 8, 1); // 1 septembrie
+        const endOfYear = new Date(now.getFullYear() + 1, 5, 30); // 30 iunie
+        term = await this.prisma.term.create({
+          data: {
+            schoolId: user.schoolId,
+            schoolYear: `${now.getFullYear()}-${now.getFullYear() + 1}`,
+            number: 1,
+            status: TermStatus.OPEN,
+            startsAt: startOfYear,
+            endsAt: endOfYear,
+          },
+        });
+      }
     }
+
+    // Găsim id-ul profesorului (dacă user-ul e ADMIN, folosim profesorul asignat grupului sau admin-ul)
+    const currentGroup = await this.prisma.subjectGroup.findUnique({
+      where: { id: groupId },
+    });
+    const teacherId = user.role === 'TEACHER' ? user.id : (currentGroup?.teacherId || user.id);
 
     const grade = await this.prisma.gradeEntry.create({
       data: {
@@ -167,7 +210,7 @@ export class GradesService {
         termId: term.id,
         groupId,
         studentId: dto.studentId,
-        teacherId: user.id,
+        teacherId,
         type: dto.type,
         value: dto.value,
         gradedAt,

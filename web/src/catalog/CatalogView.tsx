@@ -37,6 +37,7 @@ export const CatalogView: React.FC = () => {
   
   // Lista globală de elevi din școală (pentru dropdown & administrare)
   const [allStudents, setAllStudents] = useState<User[]>([]);
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
   const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>('ALL');
 
   // Date
@@ -66,10 +67,11 @@ export const CatalogView: React.FC = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        const [termsList, groupsList, studentsList] = await Promise.all([
+        const [termsList, groupsList, studentsList, subjectsList] = await Promise.all([
           apiClient<Term[]>('/api/v1/terms').catch(() => []),
           apiClient<Group[]>('/api/v1/groups').catch(() => []),
           isTeacherOrAdmin ? apiClient<User[]>('/api/v1/users?role=STUDENT').catch(() => []) : Promise.resolve([]),
+          apiClient<Subject[]>('/api/v1/subjects').catch(() => []),
         ]);
         setTerms(termsList);
         if (termsList.length > 0) {
@@ -77,6 +79,7 @@ export const CatalogView: React.FC = () => {
           setSelectedTermId(openTerm.id);
         }
         setGroups(groupsList);
+        setAllSubjects(subjectsList);
         if (groupsList.length > 0) {
           setSelectedGroupId(groupsList[0].id);
         }
@@ -687,7 +690,7 @@ export const CatalogView: React.FC = () => {
 
             <form onSubmit={handleCreateGrade} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               <div>
-                <label className="label">Materie / Grup</label>
+                <label className="label">Materie / Disciplină</label>
                 <select
                   className="input"
                   value={targetGroupId}
@@ -695,10 +698,25 @@ export const CatalogView: React.FC = () => {
                   required
                 >
                   <option value="">Alege materia</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
-                  ))}
+                  {groups.length > 0 ? (
+                    groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))
+                  ) : (
+                    allSubjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))
+                  )}
                 </select>
+                {groups.length === 0 && allSubjects.length === 0 && (
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: 'var(--danger)' }}>
+                    Nu există materii configurate în școală. Adăugați mai întâi o materie din secțiunea Materii.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -807,9 +825,15 @@ export const CatalogView: React.FC = () => {
                   required
                 >
                   <option value="">Alege materia</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
-                  ))}
+                  {groups.length > 0 ? (
+                    groups.map((g) => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))
+                  ) : (
+                    allSubjects.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))
+                  )}
                 </select>
               </div>
 

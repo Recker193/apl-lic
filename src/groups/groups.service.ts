@@ -18,6 +18,9 @@ export class GroupsService {
   ) {}
 
   async list(user: AuthenticatedUser) {
+    // Asigură automat că există grupuri/materii pentru clase dacă există materii definite în școală
+    await this.ensureGroupsForSubjects(user);
+
     if (user.role === UserRole.ADMIN) {
       return this.prisma.subjectGroup.findMany({
         where: { schoolId: user.schoolId },
@@ -56,6 +59,126 @@ export class GroupsService {
       },
       orderBy: { name: 'asc' },
     });
+  }
+
+  /**
+   * Sincronizează automat materiile definite în școală cu grupurile de studiu (SubjectGroup),
+   * astfel încât orice profesor/admin să poată alege materia din dropdown și să acorde note.
+   */
+  async ensureGroupsForSubjects(user: AuthenticatedUser) {
+    try {
+      const subjects = await this.prisma.subject.findMany({
+        where: { schoolId: user.schoolId },
+      });
+      if (subjects.length === 0) return;
+
+      const classes = await this.prisma.schoolClass.findMany({
+        where: { schoolId: user.schoolId },
+      });
+
+      // Găsește un profesor sau un admin titular fallback pentru grup
+      const fallbackTeacher =
+        (await this.prisma.user.findFirst({
+          where: { schoolId: user.schoolId, role: UserRole.TEACHER, isActive: true },
+        })) ||
+        (await this.prisma.user.findFirst({
+          where: { schoolId: user.schoolId, role: UserRole.ADMIN },
+        }));
+
+      if (!fallbackTeacher) return;
+
+      for (const subj of subjects) {
+        if (classes.length > 0) {
+          for (const cls of classes) {
+            const existing = await this.prisma.subjectGroup.findFirst({
+              where: {
+                schoolId: user.schoolId,
+                subjectId: subj.id,
+                classId: cls.id,
+              },
+            });
+            if (!existing) {
+              const created = await this.prisma.subjectGroup.create({
+                data: {
+                  schoolId: user.schoolId,
+                  subjectId: subj.id,
+                  classId: cls.id,
+                  teacherId: user.role === UserRole.TEACHER ? user.id : fallbackTeacher.id,
+                  name: `${subj.name} - ${cls.name}`,
+                },
+              });
+              // Înscrie profesorul în grup
+              await this.prisma.groupMembership.upsert({
+                where: { groupId_userId: { groupId: created.id, userId: created.teacherId } },
+                update: {},
+                create: {
+                  groupId: created.id,
+                  userId: created.teacherId,
+                  membershipRole: MembershipRole.TEACHER,
+                  canPost: true,
+                },
+              });
+              // Înscrie automat elevii clasei în grupul materiei
+              const students = await this.prisma.classMembership.findMany({
+                where: { classId: cls.id },
+              });
+              for (const st of students) {
+                await this.prisma.groupMembership.upsert({
+                  where: { groupId_userId: { groupId: created.id, userId: st.studentId } },
+                  update: {},
+                  create: {
+                    groupId: created.id,
+                    userId: st.studentId,
+                    membershipRole: MembershipRole.STUDENT,
+                    canPost: false,
+                  },
+                });
+              }
+            }
+          }
+        } else {
+          // Dacă nu există încă o clasă creată, creăm o clasă implicită sau grup general pentru materie
+          const existing = await this.prisma.subjectGroup.findFirst({
+            where: { schoolId: user.schoolId, subjectId: subj.id },
+          });
+          if (!existing) {
+            let defaultClass = await this.prisma.schoolClass.findFirst({
+              where: { schoolId: user.schoolId },
+            });
+            if (!defaultClass) {
+              defaultClass = await this.prisma.schoolClass.create({
+                data: {
+                  name: 'Clasa Generală',
+                  schoolYear: '2026-2027',
+                  schoolId: user.schoolId,
+                },
+              });
+            }
+            const created = await this.prisma.subjectGroup.create({
+              data: {
+                schoolId: user.schoolId,
+                subjectId: subj.id,
+                classId: defaultClass.id,
+                teacherId: user.role === UserRole.TEACHER ? user.id : fallbackTeacher.id,
+                name: subj.name,
+              },
+            });
+            await this.prisma.groupMembership.upsert({
+              where: { groupId_userId: { groupId: created.id, userId: created.teacherId } },
+              update: {},
+              create: {
+                groupId: created.id,
+                userId: created.teacherId,
+                membershipRole: MembershipRole.TEACHER,
+                canPost: true,
+              },
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Ignoră erorile neesențiale de auto-asigurare pentru a nu bloca request-ul
+    }
   }
 
   async update(

@@ -188,7 +188,7 @@ export class AbsencesService {
 
     // Find the appropriate term
     const date = new Date(dto.date);
-    const term = await this.prisma.term.findFirst({
+    let term = await this.prisma.term.findFirst({
       where: {
         schoolId: user.schoolId,
         status: TermStatus.OPEN,
@@ -198,7 +198,25 @@ export class AbsencesService {
     });
 
     if (!term) {
-      throw new BadRequestException('No open term found for the given date');
+      term = await this.prisma.term.findFirst({
+        where: {
+          schoolId: user.schoolId,
+          status: TermStatus.OPEN,
+        },
+      });
+      if (!term) {
+        const now = new Date();
+        term = await this.prisma.term.create({
+          data: {
+            schoolId: user.schoolId,
+            schoolYear: `${now.getFullYear()}-${now.getFullYear() + 1}`,
+            number: 1,
+            status: TermStatus.OPEN,
+            startsAt: new Date(now.getFullYear(), 8, 1),
+            endsAt: new Date(now.getFullYear() + 1, 5, 30),
+          },
+        });
+      }
     }
 
     // Check for duplicate absence
