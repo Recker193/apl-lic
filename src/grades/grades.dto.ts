@@ -18,6 +18,10 @@ export class CreateGradeDto {
 
   @IsOptional()
   @IsString()
+  termId?: string;
+
+  @IsOptional()
+  @IsString()
   comment?: string;
 }
 

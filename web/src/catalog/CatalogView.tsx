@@ -63,7 +63,16 @@ export const CatalogView: React.FC = () => {
 
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
-  // Inițializare trimestre, grupuri și elevi
+  useEffect(() => {
+    if (showAddGrade || showAddAbsence) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAddGrade, showAddAbsence]);
   useEffect(() => {
     const init = async () => {
       try {
@@ -143,7 +152,6 @@ export const CatalogView: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({
           studentId: targetStudentId,
-          termId: selectedTermId,
           value: Number(gradeValue),
           type: gradeType,
           comment: gradeComment || undefined,
@@ -251,8 +259,13 @@ export const CatalogView: React.FC = () => {
     };
   });
 
+  const selectedStudentObj = allStudents.find((s) => s.id === selectedStudentFilter);
   const studentDisplayName = user?.role === 'STUDENT'
     ? `${user.lastName || ''} ${user.firstName || ''}`.trim().toUpperCase()
+    : selectedStudentObj
+    ? `${selectedStudentObj.lastName || ''} ${selectedStudentObj.firstName || ''}`.trim().toUpperCase()
+    : user?.role === 'ADMIN'
+    ? 'CATALOG ȘCOLAR — VIZUALIZARE NOTE'
     : user ? `${user.lastName || ''} ${user.firstName || ''}`.trim().toUpperCase() : 'UTILIZATOR';
 
   return (
@@ -668,24 +681,41 @@ export const CatalogView: React.FC = () => {
 
       {/* Modal Adăugare Notă */}
       {showAddGrade && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-        }}>
-          <div className="modal-inner" style={{
-            borderRadius: '0.5rem',
-            padding: '1.5rem',
-            maxWidth: '420px',
-            width: '90%',
-          }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '1rem',
+            backdropFilter: 'blur(3px)',
+            overscrollBehavior: 'contain',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddGrade(false);
+          }}
+        >
+          <div
+            className="card card-interactive animate-fade-in"
+            style={{
+              backgroundColor: 'var(--bg-card, #1e293b)',
+              color: 'var(--text-main, #f8fafc)',
+              borderRadius: '16px',
+              padding: '1.75rem',
+              maxWidth: '440px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              border: '1px solid var(--border)',
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Adaugă Notă</h2>
 
             <form onSubmit={handleCreateGrade} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -795,24 +825,41 @@ export const CatalogView: React.FC = () => {
 
       {/* Modal Adăugare Absență pe Materie */}
       {showAddAbsence && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-        }}>
-          <div className="modal-inner" style={{
-            borderRadius: '0.5rem',
-            padding: '1.5rem',
-            maxWidth: '420px',
-            width: '90%',
-          }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '1rem',
+            backdropFilter: 'blur(3px)',
+            overscrollBehavior: 'contain',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddAbsence(false);
+          }}
+        >
+          <div
+            className="card card-interactive animate-fade-in"
+            style={{
+              backgroundColor: 'var(--bg-card, #1e293b)',
+              color: 'var(--text-main, #f8fafc)',
+              borderRadius: '16px',
+              padding: '1.75rem',
+              maxWidth: '440px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              border: '1px solid var(--border)',
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Înregistrează Absență</h2>
 
             <form onSubmit={handleCreateAbsence} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>

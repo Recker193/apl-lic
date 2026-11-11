@@ -218,36 +218,39 @@ export const SubjectEvolutionModal: React.FC<SubjectEvolutionModalProps> = ({
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
-            {[10, 9, 8].map((g) => {
-              const res = calculateNeededGrades(g, targetAverage);
-              return (
-                <div
-                  key={g}
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    padding: '0.65rem 0.8rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid var(--border)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                    Note de {g}
+            {Array.from(new Set([10, 9, 8, targetAverage]))
+              .filter((g) => g >= targetAverage && g <= 10)
+              .sort((a, b) => b - a)
+              .map((g) => {
+                const res = calculateNeededGrades(g, targetAverage);
+                return (
+                  <div
+                    key={g}
+                    style={{
+                      backgroundColor: 'var(--bg-card)',
+                      padding: '0.65rem 0.8rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid var(--border)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                      Note de {g}
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: res.impossible ? '#ef4444' : 'var(--primary)', marginTop: '0.2rem' }}>
+                      {res.alreadyReached ? (
+                        <span style={{ fontSize: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}>
+                          <CheckCircle size={14} /> Atinsă!
+                        </span>
+                      ) : res.impossible ? (
+                        <span style={{ fontSize: '0.75rem' }}>Imposibil</span>
+                      ) : (
+                        `${res.count} ${res.count === 1 ? 'notă' : 'note'}`
+                      )}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: res.impossible ? '#ef4444' : 'var(--primary)', marginTop: '0.2rem' }}>
-                    {res.alreadyReached ? (
-                      <span style={{ fontSize: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}>
-                        <CheckCircle size={14} /> Atinsă!
-                      </span>
-                    ) : res.impossible ? (
-                      <span style={{ fontSize: '0.75rem' }}>Imposibil</span>
-                    ) : (
-                      `${res.count} ${res.count === 1 ? 'notă' : 'note'}`
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 

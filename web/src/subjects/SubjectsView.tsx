@@ -17,6 +17,19 @@ export const SubjectsView: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [editSubjectTeacher, setEditSubjectTeacher] = useState<{
+    open: boolean;
+    subjectId: string;
+    subjectName: string;
+    groupId?: string;
+    currentTeacherId?: string;
+  }>({
+    open: false,
+    subjectId: '',
+    subjectName: '',
+  });
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
+  const [updatingTeacher, setUpdatingTeacher] = useState(false);
   const [messageTarget, setMessageTarget] = useState<{
     open: boolean;
     recipientName: string;
@@ -63,6 +76,42 @@ export const SubjectsView: React.FC = () => {
       fetchSubjects();
     } catch (err: any) {
       setErrorMsg(err.message || 'Eroare la crearea materiei');
+    }
+  };
+
+  const handleUpdateTeacher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTeacherId) return;
+    setUpdatingTeacher(true);
+    try {
+      if (editSubjectTeacher.groupId) {
+        // Actualizăm profesorul titular al grupului de studiu
+        await apiClient(`/api/v1/groups/${editSubjectTeacher.groupId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ teacherId: selectedTeacherId }),
+        });
+      } else {
+        // Dacă materia nu are încă grupuri create, creăm un grup asociat primei clase sau general
+        const classes = await apiClient<any[]>('/api/v1/classes').catch(() => []);
+        if (classes.length > 0) {
+          await apiClient('/api/v1/groups', {
+            method: 'POST',
+            body: JSON.stringify({
+              subjectId: editSubjectTeacher.subjectId,
+              classId: classes[0].id,
+              name: `${editSubjectTeacher.subjectName} - ${classes[0].name}`,
+              teacherId: selectedTeacherId,
+            }),
+          });
+        }
+      }
+      setEditSubjectTeacher({ open: false, subjectId: '', subjectName: '' });
+      fetchSubjects();
+      alert('Profesorul a fost actualizat cu succes pentru această materie!');
+    } catch (err: any) {
+      alert(err.message || 'Eroare la actualizarea profesorului');
+    } finally {
+      setUpdatingTeacher(false);
     }
   };
 
@@ -141,6 +190,26 @@ export const SubjectsView: React.FC = () => {
                 </div>
 
                 <div className="mobile-subject-actions">
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="mobile-subject-action-btn"
+                      title="Schimbă profesorul materiei"
+                      aria-label="Schimbă profesorul"
+                      onClick={() => {
+                        setSelectedTeacherId(relevantTeacher?.id || (teachersList[0]?.id || ''));
+                        setEditSubjectTeacher({
+                          open: true,
+                          subjectId: s.id,
+                          subjectName: s.name,
+                          groupId: s.groups?.[0]?.id,
+                          currentTeacherId: relevantTeacher?.id,
+                        });
+                      }}
+                    >
+                      <UserCheck size={18} />
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="mobile-subject-action-btn"
@@ -216,30 +285,59 @@ export const SubjectsView: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{
-                    padding: '0.45rem 0.75rem',
-                    fontSize: '0.8rem',
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                  }}
-                  title={`Trimite mesaj către ${teacherName}`}
-                  onClick={() =>
-                    setMessageTarget({
-                      open: true,
-                      recipientName: teacherName,
-                      recipientEmail: relevantTeacher?.email,
-                      contextTitle: `Mesaj pentru ${s.name}`,
-                    })
-                  }
-                >
-                  <img src="/action-chat.png" alt="Mesaj" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                  <span>Mesaj</span>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                      }}
+                      title="Schimbă profesorul titular al materiei"
+                      onClick={() => {
+                        setSelectedTeacherId(relevantTeacher?.id || (teachersList[0]?.id || ''));
+                        setEditSubjectTeacher({
+                          open: true,
+                          subjectId: s.id,
+                          subjectName: s.name,
+                          groupId: s.groups?.[0]?.id,
+                          currentTeacherId: relevantTeacher?.id,
+                        });
+                      }}
+                    >
+                      <UserCheck size={15} />
+                      <span>Schimbă prof.</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    style={{
+                      padding: '0.45rem 0.75rem',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                    title={`Trimite mesaj către ${teacherName}`}
+                    onClick={() =>
+                      setMessageTarget({
+                        open: true,
+                        recipientName: teacherName,
+                        recipientEmail: relevantTeacher?.email,
+                        contextTitle: `Mesaj pentru ${s.name}`,
+                      })
+                    }
+                  >
+                    <img src="/action-chat.png" alt="Mesaj" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                    <span>Mesaj</span>
+                  </button>
+                </div>
               </div>
             );
           })}
