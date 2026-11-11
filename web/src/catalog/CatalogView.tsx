@@ -28,6 +28,7 @@ import { AssetIcon } from '../common/AssetIcon';
 import { SubjectEvolutionModal } from './SubjectEvolutionModal';
 import { SendMessageModal } from '../common/SendMessageModal';
 import { ModalPortal } from '../common/ModalPortal';
+import { ReasonPromptModal } from '../common/ReasonPromptModal';
 
 export const CatalogView: React.FC = () => {
   const { user } = useAuth();
@@ -61,6 +62,14 @@ export const CatalogView: React.FC = () => {
   const [absenceGroupId, setAbsenceGroupId] = useState('');
   const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
   const [showSendMessage, setShowSendMessage] = useState(false);
+
+  // Dialog pentru motivul anulării notei / motivării absenței
+  const [reasonDialog, setReasonDialog] = useState<{
+    kind: 'void-grade' | 'excuse-absence';
+    id: string;
+  } | null>(null);
+  const [reasonError, setReasonError] = useState<string | null>(null);
+  const [reasonBusy, setReasonBusy] = useState(false);
 
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
@@ -167,19 +176,11 @@ export const CatalogView: React.FC = () => {
     }
   };
 
-  // Handler Anulare / Ștergere Notă
-  const handleVoidGrade = async (gradeId: string) => {
-    const reason = prompt('Motivul anulării notei:');
-    if (!reason) return;
-    try {
-      await apiClient(`/api/v1/grades/${gradeId}`, {
-        method: 'DELETE',
-        body: JSON.stringify({ reason }),
-      });
-      loadCatalogData();
-    } catch (err: any) {
-      alert(err.message || 'Eroare la anularea notei');
-    }
+  // Handler Anulare / Ștergere Notă (motivul se colectează în modal)
+  const handleVoidGrade = (gradeId: string) => {
+    setReasonError(null);
+    setReasonBusy(false);
+    setReasonDialog({ kind: 'void-grade', id: gradeId });
   };
 
   // Handler Adăugare Absență (asociată cu o materie/grup)
@@ -203,19 +204,42 @@ export const CatalogView: React.FC = () => {
     }
   };
 
-  // Handler Motivare Absență
-  const handleExcuseAbsence = async (absenceId: string) => {
-    const reason = prompt('Motivul motivării (ex: Scutire medicală):');
-    if (!reason) return;
+  // Handler Motivare Absență (motivul se colectează în modal)
+  const handleExcuseAbsence = (absenceId: string) => {
+    setReasonError(null);
+    setReasonBusy(false);
+    setReasonDialog({ kind: 'excuse-absence', id: absenceId });
+  };
+
+  const closeReasonDialog = () => {
+    setReasonDialog(null);
+    setReasonError(null);
+    setReasonBusy(false);
+  };
+
+  const handleReasonSubmit = async (reason: string) => {
+    if (!reasonDialog) return;
+    setReasonBusy(true);
+    setReasonError(null);
 
     try {
-      await apiClient(`/api/v1/absences/${absenceId}/excuse`, {
-        method: 'PATCH',
-        body: JSON.stringify({ reason }),
-      });
+      if (reasonDialog.kind === 'void-grade') {
+        await apiClient(`/api/v1/grades/${reasonDialog.id}`, {
+          method: 'DELETE',
+          body: JSON.stringify({ reason }),
+        });
+      } else {
+        await apiClient(`/api/v1/absences/${reasonDialog.id}/excuse`, {
+          method: 'PATCH',
+          body: JSON.stringify({ reason }),
+        });
+      }
+      closeReasonDialog();
       loadCatalogData();
     } catch (err: any) {
-      alert(err.message || 'Eroare la motivarea absenței');
+      const status = err?.status ? ` (HTTP ${err.status})` : '';
+      setReasonError(`${err?.message || 'Operațiunea a eșuat'}${status}`);
+      setReasonBusy(false);
     }
   };
 
@@ -680,6 +704,19 @@ export const CatalogView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal motiv (anulare notă / motivare absență) */}
+      <ReasonPromptModal
+        isOpen={Boolean(reasonDialog)}
+        title={reasonDialog?.kind === 'void-grade' ? 'Anulează nota' : 'Motivează absența'}
+        label={reasonDialog?.kind === 'void-grade' ? 'Motivul anulării notei' : 'Motivul motivării'}
+        placeholder={reasonDialog?.kind === 'void-grade' ? 'ex: notă introdusă din greșeală' : 'ex: Scutire medicală'}
+        confirmLabel={reasonDialog?.kind === 'void-grade' ? 'Anulează nota' : 'Motivează'}
+        busy={reasonBusy}
+        error={reasonError}
+        onClose={closeReasonDialog}
+        onSubmit={handleReasonSubmit}
+      />
 
       {/* Modal Adăugare Notă */}
       {showAddGrade && (
