@@ -158,8 +158,14 @@ export class AuthService {
       return created;
     });
 
-    await this.issueEmailToken(user.id, user.email, EmailTokenType.VERIFY_EMAIL);
-    return { id: user.id };
+    const emailSent = await this.issueEmailToken(
+      user.id,
+      user.email,
+      EmailTokenType.VERIFY_EMAIL,
+    );
+    // emailSent=false înseamnă că SMTP-ul a refuzat mesajul: contul există, dar
+    // utilizatorul nu poate primi linkul, deci trebuie anunțat explicit.
+    return { id: user.id, emailSent };
   }
 
   async login(
@@ -243,6 +249,24 @@ export class AuthService {
     );
   }
 
+  /**
+   * Retrimite emailul de confirmare. Răspunde identic indiferent dacă adresa
+   * există, pentru a nu divulga conturile înregistrate.
+   */
+  async resendVerification(email: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+    if (!user || !user.isActive || user.emailVerifiedAt) {
+      return false;
+    }
+    return this.issueEmailToken(
+      user.id,
+      user.email,
+      EmailTokenType.VERIFY_EMAIL,
+    );
+  }
+
   async resetPassword(token: string, password: string): Promise<void> {
     const record = await this.consumeEmailToken(
       token,
@@ -302,7 +326,7 @@ export class AuthService {
     userId: string,
     email: string,
     type: EmailTokenType,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const env = loadEnv();
     const raw = generateOpaqueToken();
     await this.prisma.emailToken.create({
@@ -315,13 +339,18 @@ export class AuthService {
     });
     const path =
       type === EmailTokenType.VERIFY_EMAIL ? 'verify-email' : 'reset-password';
-    await this.mail.send({
+    const subject =
+      type === EmailTokenType.VERIFY_EMAIL
+        ? 'Confirmați adresa de email – Oktapod'
+        : 'Resetare parolă – Oktapod';
+    const instructions =
+      type === EmailTokenType.VERIFY_EMAIL
+        ? 'Deschideți linkul de mai jos pentru a confirma adresa de email și a vă putea conecta. Linkul este valabil 60 de minute.'
+        : 'Deschideți linkul de mai jos pentru a vă seta o parolă nouă. Linkul este valabil 60 de minute.';
+    return this.mail.send({
       to: email,
-      subject:
-        type === EmailTokenType.VERIFY_EMAIL
-          ? 'Verify your email'
-          : 'Reset your password',
-      text: `Open ${env.appBaseUrl}/${path}?token=${raw}`,
+      subject,
+      text: `${instructions}\n\n${env.appBaseUrl}/${path}?token=${raw}\n\nDacă nu ați solicitat acest mesaj, îl puteți ignora.\n\nEchipa Oktapod`,
     });
   }
 

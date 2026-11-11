@@ -17,6 +17,7 @@ import { AuthService } from './auth.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 
@@ -63,6 +64,14 @@ export class AuthController {
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: authRateLimit, ttl: 60000 } })
+  @HttpCode(204)
+  @Post('resend-verification')
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    await this.authService.resendVerification(dto.email);
   }
 
   @Public()

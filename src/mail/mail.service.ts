@@ -13,10 +13,15 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
   private readonly lastMessages: OutboundMail[] = [];
 
-  async send(mail: OutboundMail): Promise<void> {
+  /**
+   * Trimite un email și raportează dacă a plecat către serverul SMTP.
+   * Nu aruncă excepții: apelanții (creare invitație / înregistrare) trebuie să
+   * poată continua și să afișeze utilizatorului că emailul nu a fost trimis.
+   */
+  async send(mail: OutboundMail): Promise<boolean> {
     if (process.env.NODE_ENV === 'test') {
       this.lastMessages.push(mail);
-      return;
+      return true;
     }
 
     const env = loadEnv();
@@ -26,8 +31,8 @@ export class MailService {
         port: env.mailPort,
         secure: env.mailPort === 465,
         auth:
-          process.env.MAIL_USER && process.env.MAIL_PASSWORD
-            ? { user: process.env.MAIL_USER, pass: process.env.MAIL_PASSWORD }
+          env.mailUser && env.mailPassword
+            ? { user: env.mailUser, pass: env.mailPassword }
             : undefined,
         // Fără aceste limite nodemailer poate aștepta până la 2 minute pe un
         // server SMTP care nu răspunde, blocând request-ul care trimite emailul
@@ -42,9 +47,22 @@ export class MailService {
         subject: mail.subject,
         text: mail.text,
       });
+      return true;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to send email to ${mail.to}: ${reason}`);
+      this.logger.error(
+        `Failed to send email to ${mail.to} via ${env.mailHost}:${env.mailPort}: ${reason}`,
+      );
+      if (!env.mailUser || !env.mailPassword) {
+        this.logger.error(
+          'SMTP authentication is not configured: set MAIL_USER and MAIL_PASSWORD (or MAIL_PASS).',
+        );
+      } else if (env.mailHost.includes('gmail')) {
+        this.logger.error(
+          `Check that MAIL_FROM (${env.mailFrom}) belongs to MAIL_USER (${env.mailUser}) and that MAIL_PASSWORD is a Gmail app password.`,
+        );
+      }
+      return false;
     }
   }
 

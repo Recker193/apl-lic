@@ -178,20 +178,31 @@ export const AdminDashboard: React.FC = () => {
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await apiClient<{ token: string }>('/api/v1/invitations', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole,
-          classId: inviteClassId || undefined,
-        }),
-      });
+      const res = await apiClient<{ token: string; emailSent?: boolean }>(
+        '/api/v1/invitations',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: inviteRole,
+            classId: inviteClassId || undefined,
+          }),
+        },
+      );
       setLastInviteToken(res.token);
+<<<<<<< HEAD
       const url = `${window.location.origin}/register?token=${res.token}`;
       await copyToClipboard(url);
       setInviteLinkCopied(true);
       window.setTimeout(() => setInviteLinkCopied(false), 3000);
       alert('Invitație creată cu succes! Link-ul de activare a fost copiat automat în clipboard.');
+=======
+      alert(
+        res.emailSent === false
+          ? 'Invitație creată, dar emailul nu a putut fi trimis. Trimiteți manual linkul afișat mai jos.'
+          : 'Invitație creată cu succes!',
+      );
+>>>>>>> d1a478b4e5aca397f156d980b876ccd337d248b8
       setInviteEmail('');
       setInviteClassId('');
       loadAll();
