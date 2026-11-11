@@ -1721,11 +1721,17 @@ a:hover {
   animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Aplică animație de intrare fluidă pe pagini */
+/* Aplică animație de intrare fluidă pe pagini.
+   ATENȚIE: NU folosi fill-mode 'both'/'forwards' aici — ar păstra pentru totdeauna
+   transform-ul din ultimul keyframe (translateY(0)) pe containerul de conținut.
+   Un transform nenul pe un strămoș transformă acel element în containing block
+   pentru descendenții cu position: fixed, deci modalele (Catalog, absențe etc.)
+   ajungeau poziționate relativ la pagina derulată în loc de viewport și ieșeau
+   complet din ecran, în timp ce body avea overflow: hidden => ecran "înghețat". */
 main > div,
 .mhome,
 .card {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 /* Header mobil polish */

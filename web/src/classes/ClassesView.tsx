@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { SchoolClass, User } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
+import { ModalPortal } from '../common/ModalPortal';
 import { List, Plus, Users, Calendar, Search, Trash2, UserPlus, X } from 'lucide-react';
 
 interface ClassWithMembers extends SchoolClass {
@@ -217,6 +218,7 @@ export const ClassesView: React.FC = () => {
 
       {/* Drawer / Modal Elevi în Clasă */}
       {selectedClass && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -330,10 +332,12 @@ export const ClassesView: React.FC = () => {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Modal Creare Clasă (Admin) */}
       {showAddModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -399,6 +403,7 @@ export const ClassesView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

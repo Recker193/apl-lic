@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Send, UserCheck, MessageSquare } from 'lucide-react';
 import { apiClient } from '../api/client';
+import { ModalPortal } from './ModalPortal';
 import { useAuth } from '../auth/AuthContext';
 
 interface SendMessageModalProps {
@@ -72,6 +73,7 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
   };
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: 'fixed',
@@ -238,6 +240,7 @@ export const SendMessageModal: React.FC<SendMessageModalProps> = ({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 };
 

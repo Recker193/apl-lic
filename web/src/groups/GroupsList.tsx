@@ -5,6 +5,7 @@ import { apiClient } from '../api/client';
 import { Group, SchoolClass, Subject } from '../api/types';
 import { BookOpen, Plus, Search } from 'lucide-react';
 import { useMobile } from '../common/useMobile';
+import { ModalPortal } from '../common/ModalPortal';
 
 // Paletă de culori pentru materii - se atribuie automat rotativ
 const COLOR_PALETTE = [
@@ -137,6 +138,7 @@ export const GroupsList: React.FC = () => {
       </div>
 
       {showCreateModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
@@ -207,6 +209,7 @@ export const GroupsList: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Lista de materii / grupuri - dinamice din baza de date */}

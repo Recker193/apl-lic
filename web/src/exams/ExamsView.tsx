@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { Exam, Group } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
 import { formatDateTime24 } from '../common/dateUtils';
+import { ModalPortal } from '../common/ModalPortal';
 import { Calendar as CalendarIcon, Clock, Plus, Trash2, Search, BookOpen, AlertCircle } from 'lucide-react';
 
 export const ExamsView: React.FC = () => {
@@ -170,6 +171,7 @@ export const ExamsView: React.FC = () => {
 
       {/* Modal Programare Examen */}
       {showAddModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -260,6 +262,7 @@ export const ExamsView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

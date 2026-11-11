@@ -6,6 +6,7 @@ import { AssetIcon } from '../common/AssetIcon';
 import { BookOpen, Plus, Search, BookMarked, UserCheck } from 'lucide-react';
 import { useMobile } from '../common/useMobile';
 import { SendMessageModal } from '../common/SendMessageModal';
+import { ModalPortal } from '../common/ModalPortal';
 
 export const SubjectsView: React.FC = () => {
   const { user } = useAuth();
@@ -355,6 +356,7 @@ export const SubjectsView: React.FC = () => {
 
       {/* Modal Adăugare Materie */}
       {showAddModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -408,6 +410,7 @@ export const SubjectsView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

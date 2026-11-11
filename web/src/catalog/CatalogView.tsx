@@ -27,6 +27,7 @@ import {
 import { AssetIcon } from '../common/AssetIcon';
 import { SubjectEvolutionModal } from './SubjectEvolutionModal';
 import { SendMessageModal } from '../common/SendMessageModal';
+import { ModalPortal } from '../common/ModalPortal';
 
 export const CatalogView: React.FC = () => {
   const { user } = useAuth();
@@ -681,6 +682,7 @@ export const CatalogView: React.FC = () => {
 
       {/* Modal Adăugare Notă */}
       {showAddGrade && (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed',
@@ -821,10 +823,12 @@ export const CatalogView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Modal Adăugare Absență pe Materie */}
       {showAddAbsence && (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed',
@@ -927,6 +931,7 @@ export const CatalogView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Modal trimitere mesaj */}

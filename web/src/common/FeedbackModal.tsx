@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Send, Star, MessageSquareHeart } from 'lucide-react';
 import { apiClient } from '../api/client';
+import { ModalPortal } from './ModalPortal';
 import { useAuth } from '../auth/AuthContext';
 
 interface FeedbackModalProps {
@@ -68,6 +69,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
   const activeRating = hoverRating !== null ? hoverRating : rating;
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: 'fixed',
@@ -240,6 +242,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 };
 

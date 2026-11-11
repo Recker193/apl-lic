@@ -12,6 +12,7 @@ import {
 } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
 import { TimeInput24 } from '../common/TimeInput24';
+import { ModalPortal } from '../common/ModalPortal';
 import { 
   Clock, 
   Plus, 
@@ -844,6 +845,7 @@ export const TimetableView: React.FC = () => {
 
       {/* Modal Adăugare Oră Curs (Luni-Vineri) */}
       {showAddModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -957,10 +959,12 @@ export const TimetableView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Modal Programare Întâlnire Club Weekend */}
       {showWeekendModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -1081,10 +1085,12 @@ export const TimetableView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Modal Configurare Intervale & Schimb */}
       {showConfigModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -1217,6 +1223,7 @@ export const TimetableView: React.FC = () => {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

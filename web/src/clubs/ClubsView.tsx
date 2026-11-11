@@ -3,6 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Club, User } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
+import { ModalPortal } from '../common/ModalPortal';
 import { 
   Compass, 
   Plus, 
@@ -289,6 +290,7 @@ export const ClubsView: React.FC = () => {
 
       {/* Modal Înființare Club */}
       {showAddModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -367,6 +369,7 @@ export const ClubsView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

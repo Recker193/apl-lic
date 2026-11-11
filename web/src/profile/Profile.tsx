@@ -6,6 +6,7 @@ import { apiClient } from '../api/client';
 import { User } from '../api/types';
 import { Palette, Moon, Sun, Settings, MessageCircle, LogOut } from 'lucide-react';
 import { SendMessageModal } from '../common/SendMessageModal';
+import { ModalPortal } from '../common/ModalPortal';
 
 export const Profile: React.FC = () => {
   const { user, setUser, logout } = useAuth();
@@ -213,6 +214,7 @@ export const Profile: React.FC = () => {
 
       {/* ── Modal / Panou Setări & Personalizare Teme ── */}
       {showSettingsModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed',
           top: 0,
@@ -300,6 +302,7 @@ export const Profile: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Modal Trimitere Mesaj Diriginte */}
