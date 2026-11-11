@@ -665,6 +665,7 @@ export const CatalogView: React.FC = () => {
                           <button 
                             className="btn btn-outline" 
                             style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            title="Doar dirigintele clasei, profesorul materiei sau administratorul pot motiva absența"
                             onClick={() => handleExcuseAbsence(a.id)}
                           >
                             Motivează

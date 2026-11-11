@@ -286,24 +286,39 @@ export class AbsencesService {
       throw new NotFoundException();
     }
 
-    // Only homeroom teacher or admin can excuse absences
-    if (user.role !== 'ADMIN') {
-      // Check if user is homeroom teacher for the student's class
-      const classMembership = absence.student.classMemberships[0];
-      if (!classMembership) {
-        throw new ForbiddenException();
-      }
+    // Pot motiva absența: administratorul, profesorul materiei (grupul absenței)
+    // sau dirigintele unei clase din care face parte elevul.
+    let canExcuse = user.role === 'ADMIN';
 
-      const homeroom = await this.prisma.homeroomAssignment.findFirst({
+    if (!canExcuse && absence.groupId) {
+      const group = await this.prisma.subjectGroup.findFirst({
         where: {
-          classId: classMembership.classId,
+          id: absence.groupId,
+          schoolId: user.schoolId,
           teacherId: user.id,
         },
       });
+      canExcuse = Boolean(group);
+    }
 
-      if (!homeroom) {
-        throw new ForbiddenException();
+    if (!canExcuse) {
+      const classIds = absence.student.classMemberships.map((m) => m.classId);
+      if (classIds.length > 0) {
+        const homeroom = await this.prisma.homeroomAssignment.findFirst({
+          where: {
+            schoolId: user.schoolId,
+            teacherId: user.id,
+            classId: { in: classIds },
+          },
+        });
+        canExcuse = Boolean(homeroom);
       }
+    }
+
+    if (!canExcuse) {
+      throw new ForbiddenException(
+        'Doar dirigintele clasei, profesorul materiei sau administratorul pot motiva absența.',
+      );
     }
 
     if (absence.status === AbsenceStatus.EXCUSED) {

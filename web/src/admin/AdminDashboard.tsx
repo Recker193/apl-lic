@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
-import { SchoolClass, Subject, AuditLogItem, UserRole, User, Group } from '../api/types';
-import { Shield, Plus, Mail, Copy, Check, Users, ArrowRightLeft, BookOpen, GraduationCap, Trash2 } from 'lucide-react';
+import { SchoolClass, Subject, AuditLogItem, UserRole, User, Group, HomeroomAssignment } from '../api/types';
+import { Shield, Plus, Mail, Copy, Check, Users, ArrowRightLeft, BookOpen, GraduationCap, Trash2, UserCheck } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
@@ -10,6 +10,7 @@ export const AdminDashboard: React.FC = () => {
   const [students, setStudents] = useState<User[]>([]);
   const [teachers, setTeachers] = useState<User[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [homeroomAssignments, setHomeroomAssignments] = useState<HomeroomAssignment[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Forms
@@ -26,6 +27,11 @@ export const AdminDashboard: React.FC = () => {
   const [newTeacherId, setNewTeacherId] = useState('');
   const [newGroupClassId, setNewGroupClassId] = useState('');
 
+  // Dirigenție
+  const [homeroomClassId, setHomeroomClassId] = useState('');
+  const [homeroomTeacherId, setHomeroomTeacherId] = useState('');
+  const [homeroomSchoolYear, setHomeroomSchoolYear] = useState('2026-2027');
+
   // Invitation
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<UserRole>('STUDENT');
@@ -39,13 +45,14 @@ export const AdminDashboard: React.FC = () => {
 
   const loadAll = async () => {
     try {
-      const [cData, sData, aData, studentsData, teachersData, groupsData] = await Promise.all([
+      const [cData, sData, aData, studentsData, teachersData, groupsData, homeroomData] = await Promise.all([
         apiClient<SchoolClass[]>('/api/v1/classes').catch(() => []),
         apiClient<Subject[]>('/api/v1/subjects').catch(() => []),
         apiClient<{ items: AuditLogItem[] }>('/api/v1/audit?page=1&limit=15').catch(() => ({ items: [] })),
         apiClient<User[]>('/api/v1/users?role=STUDENT').catch(() => []),
         apiClient<User[]>('/api/v1/users?role=TEACHER').catch(() => []),
         apiClient<Group[]>('/api/v1/groups').catch(() => []),
+        apiClient<HomeroomAssignment[]>('/api/v1/homeroom-assignments').catch(() => []),
       ]);
       setClasses(cData);
       setSubjects(sData);
@@ -53,11 +60,19 @@ export const AdminDashboard: React.FC = () => {
       setStudents(studentsData);
       setTeachers(teachersData);
       setGroups(groupsData);
+      setHomeroomAssignments(homeroomData);
       if (studentsData.length > 0 && !selectedStudentId) {
         setSelectedStudentId(studentsData[0].id);
       }
       if (cData.length > 0 && !targetClassId) {
         setTargetClassId(cData[0].id);
+      }
+      if (cData.length > 0 && !homeroomClassId) {
+        setHomeroomClassId(cData[0].id);
+        setHomeroomSchoolYear(cData[0].schoolYear || '2026-2027');
+      }
+      if (teachersData.length > 0 && !homeroomTeacherId) {
+        setHomeroomTeacherId(teachersData[0].id);
       }
       if (groupsData.length > 0 && !selectedGroupId) {
         setSelectedGroupId(groupsData[0].id);
@@ -135,6 +150,39 @@ export const AdminDashboard: React.FC = () => {
       loadAll();
     } catch (err: any) {
       alert(err.message || 'Eroare la actualizarea profesorului / clasei');
+    }
+  };
+
+  // Desemnare / schimbare diriginte pentru o clasă și un an școlar
+  const handleAssignHomeroom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!homeroomClassId || !homeroomTeacherId || !homeroomSchoolYear) return;
+
+    const existing = homeroomAssignments.find(
+      (a) => a.classId === homeroomClassId && a.schoolYear === homeroomSchoolYear,
+    );
+
+    try {
+      if (existing) {
+        await apiClient(`/api/v1/homeroom-assignments/${existing.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ teacherId: homeroomTeacherId }),
+        });
+        alert('Dirigintele a fost actualizat cu succes!');
+      } else {
+        await apiClient('/api/v1/homeroom-assignments', {
+          method: 'POST',
+          body: JSON.stringify({
+            classId: homeroomClassId,
+            teacherId: homeroomTeacherId,
+            schoolYear: homeroomSchoolYear,
+          }),
+        });
+        alert('Dirigintele a fost desemnat cu succes!');
+      }
+      loadAll();
+    } catch (err: any) {
+      alert(err.message || 'Eroare la salvarea dirigintelui');
     }
   };
 
@@ -416,6 +464,127 @@ export const AdminDashboard: React.FC = () => {
             </button>
           </form>
         </div>
+      </div>
+
+      {/* Dirigenție (profesor diriginte pe clasă și an școlar) */}
+      <div className="card">
+        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <UserCheck size={18} color="var(--primary)" /> Dirigenție ({homeroomAssignments.length})
+        </h2>
+        <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+          Desemnează dirigintele fiecărei clase. Dirigintele poate motiva absențele elevilor din clasa sa; dacă
+          există deja un diriginte pentru clasa și anul ales, salvarea îl înlocuiește.
+        </p>
+
+        {classes.length === 0 || teachers.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            Adaugă mai întâi cel puțin o clasă și un profesor pentru a desemna un diriginte.
+          </p>
+        ) : (
+          <form
+            onSubmit={handleAssignHomeroom}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem', alignItems: 'end', marginBottom: '1rem' }}
+          >
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem' }}>Clasa</label>
+              <select
+                className="input-field"
+                value={homeroomClassId}
+                onChange={(e) => {
+                  const classId = e.target.value;
+                  setHomeroomClassId(classId);
+                  const cls = classes.find((c) => c.id === classId);
+                  const current = homeroomAssignments.find(
+                    (a) => a.classId === classId && a.schoolYear === (cls?.schoolYear || homeroomSchoolYear),
+                  );
+                  if (cls?.schoolYear) setHomeroomSchoolYear(cls.schoolYear);
+                  if (current) setHomeroomTeacherId(current.teacherId);
+                }}
+                required
+              >
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    Clasa {c.name} ({c.schoolYear})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem' }}>Profesor diriginte</label>
+              <select
+                className="input-field"
+                value={homeroomTeacherId}
+                onChange={(e) => setHomeroomTeacherId(e.target.value)}
+                required
+              >
+                {teachers.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.lastName} {t.firstName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem' }}>An școlar</label>
+              <input
+                type="text"
+                required
+                className="input-field"
+                placeholder="2026-2027"
+                value={homeroomSchoolYear}
+                onChange={(e) => setHomeroomSchoolYear(e.target.value)}
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary" style={{ alignSelf: 'end' }}>
+              <UserCheck size={16} /> Salvează dirigintele
+            </button>
+          </form>
+        )}
+
+        {homeroomAssignments.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Nu există diriginți desemnați.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                  <th style={{ padding: '0.6rem' }}>Clasa</th>
+                  <th style={{ padding: '0.6rem' }}>An școlar</th>
+                  <th style={{ padding: '0.6rem' }}>Diriginte</th>
+                  <th style={{ padding: '0.6rem', textAlign: 'right' }}>Acțiuni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {homeroomAssignments.map((a) => (
+                  <tr key={a.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '0.6rem', fontWeight: 600 }}>{a.class?.name || '-'}</td>
+                    <td style={{ padding: '0.6rem' }}>{a.schoolYear}</td>
+                    <td style={{ padding: '0.6rem' }}>
+                      {a.teacher ? `Prof. ${a.teacher.lastName} ${a.teacher.firstName}` : '-'}
+                    </td>
+                    <td style={{ padding: '0.6rem', textAlign: 'right' }}>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        style={{ padding: '0.3rem 0.65rem', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setHomeroomClassId(a.classId);
+                          setHomeroomSchoolYear(a.schoolYear);
+                          setHomeroomTeacherId(a.teacherId);
+                        }}
+                      >
+                        Editează
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Creare Invitație */}

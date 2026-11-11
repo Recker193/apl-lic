@@ -4,13 +4,18 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
 } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../common/types/authenticated-user';
-import { CreateHomeroomAssignmentDto, SetConductGradeDto } from './homeroom.dto';
+import {
+  CreateHomeroomAssignmentDto,
+  SetConductGradeDto,
+  UpdateHomeroomAssignmentDto,
+} from './homeroom.dto';
 import { HomeroomService } from './homeroom.service';
 
 @Controller()
@@ -23,6 +28,15 @@ export class HomeroomController {
     @Body() dto: CreateHomeroomAssignmentDto,
   ) {
     return this.service.createAssignment(user, dto);
+  }
+
+  @Patch('homeroom-assignments/:id')
+  updateAssignment(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateHomeroomAssignmentDto,
+  ) {
+    return this.service.updateAssignment(user, id, dto);
   }
 
   @Get('homeroom-assignments')

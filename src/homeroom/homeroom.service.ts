@@ -80,6 +80,47 @@ export class HomeroomService {
     });
   }
 
+  async updateAssignment(
+    user: AuthenticatedUser,
+    assignmentId: string,
+    dto: { teacherId: string },
+  ) {
+    if (user.role !== 'ADMIN') {
+      throw new ForbiddenException();
+    }
+
+    const assignment = await this.prisma.homeroomAssignment.findFirst({
+      where: { id: assignmentId, schoolId: user.schoolId },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('Homeroom assignment not found');
+    }
+
+    const teacher = await this.prisma.user.findFirst({
+      where: { id: dto.teacherId, schoolId: user.schoolId, role: 'TEACHER' },
+    });
+
+    if (!teacher) {
+      throw new NotFoundException('Teacher not found');
+    }
+
+    return this.prisma.homeroomAssignment.update({
+      where: { id: assignment.id },
+      data: { teacherId: dto.teacherId },
+      include: {
+        class: true,
+        teacher: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+  }
+
   async getClassSummary(
     user: AuthenticatedUser,
     classId: string,

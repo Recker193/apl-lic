@@ -357,8 +357,22 @@ export interface AbsenceEntry {
   group?: {
     id: string;
     name: string;
+    teacherId?: string;
   };
   student?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+export interface HomeroomAssignment {
+  id: string;
+  classId: string;
+  teacherId: string;
+  schoolYear: string;
+  class?: SchoolClass;
+  teacher?: {
     id: string;
     firstName: string;
     lastName: string;

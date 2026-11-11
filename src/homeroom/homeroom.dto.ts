@@ -11,6 +11,11 @@ export class CreateHomeroomAssignmentDto {
   schoolYear!: string;
 }
 
+export class UpdateHomeroomAssignmentDto {
+  @IsString()
+  teacherId!: string;
+}
+
 export class SetConductGradeDto {
   @IsInt()
   @Min(1)
