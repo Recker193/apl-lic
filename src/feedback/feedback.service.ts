@@ -33,17 +33,53 @@ export class FeedbackService {
       `----------------------------------------------------`,
     ].join('\n');
 
-    const sent = await this.mailService.send({
+    // 1. Trimite emailul de notificare feedback către echipa de suport oktapod.support@gmail.com
+    const sentToSupport = await this.mailService.send({
       to: this.targetEmail,
       subject,
       text,
     });
 
-    this.logger.log(`Feedback de la ${senderEmail} trimis către ${this.targetEmail}: ${sent}`);
+    this.logger.log(`Feedback de la ${senderEmail} trimis către ${this.targetEmail}: ${sentToSupport}`);
+
+    // 2. Trimite un email automat de confirmare / suport de la no.reply.oktapod@gmail.com către utilizator (dacă are email valid)
+    let confirmationSent = false;
+    if (senderEmail && senderEmail !== 'Nespecificat' && senderEmail.includes('@')) {
+      const confirmationSubject = `[Suport Oktapod] Am primit feedback-ul tău (#${category})`;
+      const confirmationText = [
+        `Bună, ${senderName}!`,
+        ``,
+        `Îți mulțumim că ai trimis un feedback pentru platforma Oktapod.`,
+        `Mesajul tău a fost înregistrat cu succes și transmis către echipa de asistență tehnică (oktapod.support@gmail.com).`,
+        ``,
+        `Detalii feedback înregistrat:`,
+        `----------------------------------------------------`,
+        `Rating acordat: ${dto.rating}/5 [${stars}]`,
+        `Categorie: ${category}`,
+        `Mesajul tău:`,
+        dto.message,
+        `----------------------------------------------------`,
+        ``,
+        `Dacă ai nevoie de asistență suplimentară, ne poți contacta direct la adresa de support: oktapod.support@gmail.com.`,
+        ``,
+        `Cu stimă,`,
+        `Echipa de Suport Oktapod`,
+        `no.reply.oktapod@gmail.com`,
+      ].join('\n');
+
+      confirmationSent = await this.mailService.send({
+        to: senderEmail,
+        subject: confirmationSubject,
+        text: confirmationText,
+      });
+
+      this.logger.log(`Email de confirmare feedback trimis către utilizatorul ${senderEmail}: ${confirmationSent}`);
+    }
 
     return {
       success: true,
-      deliveredToMailServer: sent,
+      deliveredToMailServer: sentToSupport,
+      confirmationSent,
       message: 'Feedback-ul a fost trimis cu succes către echipa de suport Oktapod!',
     };
   }

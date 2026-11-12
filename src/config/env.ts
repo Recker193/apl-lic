@@ -68,8 +68,8 @@ export function loadEnv(): AppEnv {
       .filter(Boolean),
     storageDir: process.env.STORAGE_DIR ?? './storage/uploads',
     maxUploadBytes: Number(process.env.MAX_UPLOAD_BYTES ?? 10 * 1024 * 1024),
-    mailHost: process.env.MAIL_HOST ?? 'localhost',
-    mailPort: Number(process.env.MAIL_PORT ?? 1025),
+    mailHost: process.env.MAIL_HOST ?? 'smtp.gmail.com',
+    mailPort: Number(process.env.MAIL_PORT ?? 587),
     // MAIL_PASS este acceptat ca alias: unele template-uri de deploy (Render,
     // Railway) folosesc numele acesta, iar fără el autentificarea SMTP lipsea
     // în tăcere și Gmail respingea trimiterea.
@@ -77,13 +77,13 @@ export function loadEnv(): AppEnv {
       process.env.MAIL_PASSWORD,
       process.env.MAIL_PASS,
     ),
-    mailUser: firstNonEmpty(process.env.MAIL_USER),
+    mailUser: firstNonEmpty(process.env.MAIL_USER) ?? 'no.reply.oktapod@gmail.com',
     // Gmail (și majoritatea providerilor) respinge mesajele al căror expeditor
     // nu aparține contului autentificat; dacă MAIL_FROM nu e setat folosim
-    // adresa contului SMTP în loc de „noreply@localhost”.
+    // adresa contului SMTP configurat (no.reply.oktapod@gmail.com).
     mailFrom: firstNonEmpty(process.env.MAIL_FROM) ??
       firstNonEmpty(process.env.MAIL_USER) ??
-      'noreply@localhost',
+      'no.reply.oktapod@gmail.com',
     appBaseUrl: process.env.APP_BASE_URL ?? 'http://localhost:3000',
     enableCron: process.env.ENABLE_CRON === 'true',
     trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
