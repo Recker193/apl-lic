@@ -150,7 +150,7 @@ export const MobileLayout: React.FC = () => {
           </span>
         </div>
 
-        {/* Butonul roșu subliniat care deschide/închide bara laterală */}
+        {/* Butonul roșu subliniat care deschide/închide bara laterală (hamburger) */}
         <button
           className="mobile-icon-btn mobile-header-menu-btn"
           onClick={() => setDrawerOpen(!drawerOpen)}
@@ -166,6 +166,16 @@ export const MobileLayout: React.FC = () => {
           {unreadCount > 0 && (
             <span className="mobile-header-notif-dot" />
           )}
+          <Menu size={22} />
+        </button>
+
+        {/* Butonul de Setări (gear) — singurul buton de setări */}
+        <button
+          className="mobile-icon-btn"
+          onClick={() => setShowFeedbackModal(true)}
+          aria-label="Setări"
+          style={{ zIndex: 2 }}
+        >
           <Settings size={22} />
         </button>
       </header>

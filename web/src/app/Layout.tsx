@@ -101,6 +101,15 @@ export const Layout: React.FC = () => {
                 {schoolName || 'Platformă Școlară'}
               </div>
             </div>
+            <button
+              onClick={() => setShowFeedbackModal(true)}
+              className="mobile-icon-btn"
+              aria-label="Setări"
+              title="Setări"
+              style={{ marginLeft: 'auto' }}
+            >
+              <Settings size={20} />
+            </button>
           </div>
 
           {user && (
@@ -219,24 +228,18 @@ export const Layout: React.FC = () => {
              <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
            </button>
            
-{/* Buton Settings - singurul buton de setari cu underline roșu */}
-            <button
-              onClick={() => setShowFeedbackModal(true)}
-              className="btn btn-outline mobile-drawer-footer-btn"
-              style={{ 
-                width: '100%', 
-                justifyContent: 'flex-start', 
-                fontSize: '0.85rem',
-                color: '#d97706',
-                borderColor: 'rgba(217, 119, 6, 0.3)',
-                textDecoration: 'underline',
-                textDecorationColor: '#ef4444',
-                textDecorationThickness: 2,
-              }}
-              title="Setări"
-            >
-              <Settings size={16} />
-            </button>
+{/* Customizare temă / culori de accent */}
+             <AccentColorPicker />
+            
+             {/* Buton Trimitere Feedback */}
+              <button
+                onClick={() => setShowFeedbackModal(true)}
+                className="btn btn-outline mobile-drawer-footer-btn"
+                style={{ color: '#d97706', borderColor: 'rgba(217, 119, 6, 0.3)' }}
+                title="Trimite sugestii sau feedback către Oktapod"
+              >
+                <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
+              </button>
            
            {/* Buton Dark Mode Toggle */}
            <button
