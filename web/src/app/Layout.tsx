@@ -20,7 +20,8 @@ import {
   MessageSquare,
   Sun,
   Moon,
-  MessageSquareHeart
+  MessageSquareHeart,
+  Settings,
 } from 'lucide-react';
 import { FeedbackModal } from '../common/FeedbackModal';
 
@@ -208,45 +209,58 @@ export const Layout: React.FC = () => {
           {/* Customizare temă / culori de accent */}
           <AccentColorPicker />
 
-          {/* Buton Trimitere Feedback */}
-          <button
-            onClick={() => setShowFeedbackModal(true)}
-            className="btn btn-outline"
-            style={{
-              width: '100%',
-              justifyContent: 'flex-start',
-              fontSize: '0.85rem',
-              color: '#d97706',
-              borderColor: 'rgba(217, 119, 6, 0.3)',
-            }}
-            title="Trimite sugestii sau feedback către Oktapod"
-          >
-            <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
-          </button>
-
-          {/* Buton Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className="btn btn-outline"
-            style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.85rem' }}
-            title="Schimbă tema de culori"
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {isDarkMode ? <Moon size={16} color="var(--warning)" /> : <Sun size={16} color="var(--warning)" />}
-              <span>{isDarkMode ? 'Mod Întunecat' : 'Mod Luminos'}</span>
-            </span>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-              {isDarkMode ? 'ON' : 'OFF'}
-            </span>
-          </button>
-
-          <button 
-            onClick={logout} 
-            className="btn btn-outline" 
-            style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)' }}
-          >
-            <LogOut size={16} /> <span>Deconectare</span>
-          </button>
+{/* Buton Trimitere Feedback */}
+           <button
+             onClick={() => setShowFeedbackModal(true)}
+             className="btn btn-outline mobile-drawer-footer-btn"
+             style={{ color: '#d97706', borderColor: 'rgba(217, 119, 6, 0.3)' }}
+             title="Trimite sugestii sau feedback către Oktapod"
+           >
+             <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
+           </button>
+           
+{/* Buton Settings - singurul buton de setari cu underline roșu */}
+            <button
+              onClick={() => setShowFeedbackModal(true)}
+              className="btn btn-outline mobile-drawer-footer-btn"
+              style={{ 
+                width: '100%', 
+                justifyContent: 'flex-start', 
+                fontSize: '0.85rem',
+                color: '#d97706',
+                borderColor: 'rgba(217, 119, 6, 0.3)',
+                textDecoration: 'underline',
+                textDecorationColor: '#ef4444',
+                textDecorationThickness: 2,
+              }}
+              title="Setări"
+            >
+              <Settings size={16} />
+            </button>
+           
+           {/* Buton Dark Mode Toggle */}
+           <button
+             onClick={toggleDarkMode}
+             className="btn btn-outline"
+             style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.85rem' }}
+             title="Schimbă tema de culori"
+           >
+             <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+               {isDarkMode ? <Moon size={16} color="var(--warning)" /> : <Sun size={16} color="var(--warning)" />}
+               <span>{isDarkMode ? 'Mod Întunecat' : 'Mod Luminos'}</span>
+             </span>
+             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+               {isDarkMode ? 'ON' : 'OFF'}
+             </span>
+           </button>
+           
+           <button 
+             onClick={logout} 
+             className="btn btn-outline" 
+             style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)' }}
+           >
+             <LogOut size={16} /> <span>Deconectare</span>
+           </button>
         </div>
       </aside>
 

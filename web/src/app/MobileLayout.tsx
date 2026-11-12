@@ -24,12 +24,13 @@ import {
   X,
   ChevronRight,
   MessageSquareHeart,
+  Settings,
 } from 'lucide-react';
 import { FeedbackModal } from '../common/FeedbackModal';
 
 /* ─────────────────────────────────────────────
-   Tab-urile afișate în bara de jos — 6 taburi
-   Iconuri din template-ul vizual mobil + fallback
+   Butonul roșu subliniat care toggle-ul sidebar-ului
+   Iconul de setări (gear) – singurul buton de setări
 ───────────────────────────────────────────── */
 const BOTTOM_TABS = [
   { path: '/', icon: Home, image: '/tab-home.png', label: 'Acasă' },
@@ -149,16 +150,23 @@ export const MobileLayout: React.FC = () => {
           </span>
         </div>
 
+        {/* Butonul roșu subliniat care deschide/închide bara laterală */}
         <button
           className="mobile-icon-btn mobile-header-menu-btn"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Deschide meniu"
-          style={{ zIndex: 2 }}
+          onClick={() => setDrawerOpen(!drawerOpen)}
+          aria-label={drawerOpen ? 'Închide meniu' : 'Deschide meniu'}
+          style={{
+            zIndex: 2,
+            textDecoration: 'underline',
+            textDecorationColor: '#ef4444',
+            textDecorationThickness: '2px',
+            textUnderlineOffset: '4px',
+          }}
         >
           {unreadCount > 0 && (
             <span className="mobile-header-notif-dot" />
           )}
-          <Menu size={22} />
+          <Settings size={22} />
         </button>
       </header>
 
@@ -201,20 +209,10 @@ export const MobileLayout: React.FC = () => {
 
       {/* ── Drawer panel ── */}
       <aside className={`mobile-drawer${drawerOpen ? ' mobile-drawer--open' : ''}`}>
-        {/* Header drawer */}
+        {/* Header drawer — fără logo Oktapod (cel din header-ul principal este suficient) */}
         <div className="mobile-drawer-header">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-              <img
-                src="/logo.png"
-                alt="Oktapod"
-                style={{ width: '28px', height: '28px', objectFit: 'contain' }}
-              />
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--mobile-school-color)' }}>
-                Oktapod
-              </span>
-            </div>
-            <div className="mobile-drawer-title" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <div className="mobile-drawer-title" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--mobile-school-color)', marginBottom: '0.25rem' }}>
               {schoolName || 'Platformă Școlară'}
             </div>
             {user && (
