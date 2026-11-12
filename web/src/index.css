@@ -2170,6 +2170,11 @@ main > div,
   padding-bottom: 0.5rem;
   margin: 1rem 0 1.5rem;
   overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+.catalog-tabs-bar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 .catalog-tab-item {
   font-size: 0.95rem;

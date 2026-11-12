@@ -315,8 +315,6 @@ export const CatalogView: React.FC = () => {
           >
             Trimite-ne un mesaj
           </button>
-          <button type="button" className="catalog-blue-btn">Setări SMS/Mail</button>
-          <button type="button" className="catalog-blue-btn">Notificare SMS</button>
           <button type="button" className="catalog-blue-btn" onClick={handlePrint}>Descarcă situația școlară (PDF)</button>
         </div>
       </div>

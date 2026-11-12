@@ -218,28 +218,21 @@ export const Layout: React.FC = () => {
           {/* Customizare temă / culori de accent */}
           <AccentColorPicker />
 
-{/* Buton Trimitere Feedback */}
-           <button
-             onClick={() => setShowFeedbackModal(true)}
-             className="btn btn-outline mobile-drawer-footer-btn"
-             style={{ color: '#d97706', borderColor: 'rgba(217, 119, 6, 0.3)' }}
-             title="Trimite sugestii sau feedback către Oktapod"
-           >
-             <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
-           </button>
-           
-{/* Customizare temă / culori de accent */}
-             <AccentColorPicker />
-            
-             {/* Buton Trimitere Feedback */}
-              <button
-                onClick={() => setShowFeedbackModal(true)}
-                className="btn btn-outline mobile-drawer-footer-btn"
-                style={{ color: '#d97706', borderColor: 'rgba(217, 119, 6, 0.3)' }}
-                title="Trimite sugestii sau feedback către Oktapod"
-              >
-                <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
-              </button>
+          {/* Buton Trimitere Feedback */}
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="btn btn-outline"
+            style={{
+              width: '100%',
+              justifyContent: 'flex-start',
+              fontSize: '0.85rem',
+              color: '#d97706',
+              borderColor: 'rgba(217, 119, 6, 0.3)',
+            }}
+            title="Trimite sugestii sau feedback către Oktapod"
+          >
+            <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
+          </button>
            
            {/* Buton Dark Mode Toggle */}
            <button

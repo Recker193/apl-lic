@@ -140,43 +140,20 @@ export const MobileLayout: React.FC = () => {
           </span>
         </div>
 
-        {/* Numele liceului centrat pe două rânduri — verde, font serios ca în template */}
-        <div className="mobile-header-school-center">
-          <span className="mobile-header-school-line1">
-            {schoolName ? schoolName.split('Tudor')[0]?.trim() || schoolName : 'Colegiul Național de Informatică'}
-          </span>
-          <span className="mobile-header-school-line2">
-            {schoolName && schoolName.length > 25 ? schoolName.substring(0, 25) : (schoolName || 'Liceul')}
-          </span>
-        </div>
-
-        {/* Butonul roșu subliniat care deschide/închide bara laterală (hamburger) */}
+        {/* Butonul de meniu / drawer */}
         <button
           className="mobile-icon-btn mobile-header-menu-btn"
           onClick={() => setDrawerOpen(!drawerOpen)}
           aria-label={drawerOpen ? 'Închide meniu' : 'Deschide meniu'}
           style={{
             zIndex: 2,
-            textDecoration: 'underline',
-            textDecorationColor: '#ef4444',
-            textDecorationThickness: '2px',
-            textUnderlineOffset: '4px',
+            marginLeft: 'auto',
           }}
         >
           {unreadCount > 0 && (
             <span className="mobile-header-notif-dot" />
           )}
           <Menu size={22} />
-        </button>
-
-        {/* Butonul de Setări (gear) — singurul buton de setări */}
-        <button
-          className="mobile-icon-btn"
-          onClick={() => setShowFeedbackModal(true)}
-          aria-label="Setări"
-          style={{ zIndex: 2 }}
-        >
-          <Settings size={22} />
         </button>
       </header>
 

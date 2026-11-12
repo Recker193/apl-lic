@@ -61,11 +61,6 @@ export const Profile: React.FC = () => {
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             {roleLabel}
           </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px', width: '28px' }}>
-            <span style={{ height: '3px', backgroundColor: 'var(--text-main)', borderRadius: '2px' }} />
-            <span style={{ height: '3px', backgroundColor: 'var(--text-main)', borderRadius: '2px' }} />
-            <span style={{ height: '3px', backgroundColor: 'var(--text-main)', borderRadius: '2px' }} />
-          </div>
         </div>
 
         <button

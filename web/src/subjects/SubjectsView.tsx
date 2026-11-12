@@ -236,7 +236,7 @@ export const SubjectsView: React.FC = () => {
           })}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.25rem' }}>
           {filtered.map((s) => {
             const relevantTeacher =
               s.groups?.find((g) => user?.class?.id && g.classId === user.class.id)?.teacher ||
@@ -250,12 +250,13 @@ export const SubjectsView: React.FC = () => {
                 key={s.id}
                 className="card card-interactive"
                 style={{
-                  padding: '1.25rem',
+                  padding: '1.25rem 1.4rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '1rem',
                   borderRadius: '12px',
+                  minWidth: 0,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, flex: 1 }}>
@@ -274,12 +275,20 @@ export const SubjectsView: React.FC = () => {
                     <BookMarked size={22} />
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.25rem 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <h3
+                      style={{
+                        fontSize: '1.05rem',
+                        fontWeight: 700,
+                        margin: '0 0 0.25rem 0',
+                        wordBreak: 'break-word',
+                      }}
+                      title={s.name}
+                    >
                       {s.name}
                     </h3>
                     <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <UserCheck size={14} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <UserCheck size={14} style={{ flexShrink: 0 }} />
+                      <span style={{ wordBreak: 'break-word' }}>
                         {teacherName}
                       </span>
                     </div>
