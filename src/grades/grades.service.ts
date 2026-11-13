@@ -127,10 +127,19 @@ export class GradesService {
       type: GradeType;
       value: number;
       gradedAt: string;
+      termId?: string;
       comment?: string;
     },
   ) {
-    await this.access.assertGroupTeacher(user, groupId);
+    // Adminii au acces complet; profesorii pot nota la grupurile lor sau la orice grup din școală dacă nu există restricție
+    if (user.role === 'ADMIN') {
+      const grp = await this.prisma.subjectGroup.findFirst({
+        where: { id: groupId, schoolId: user.schoolId },
+      });
+      if (!grp) throw new BadRequestException('Grupul nu există în această școală');
+    } else {
+      await this.access.assertGroupTeacher(user, groupId);
+    }
 
     // Verify student is a member of the group, or auto-enroll if student is from the class
     let membership = await this.prisma.groupMembership.findUnique({

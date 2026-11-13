@@ -21,7 +21,8 @@ export class GroupsService {
     // Asigură automat că există grupuri/materii pentru clase dacă există materii definite în școală
     await this.ensureGroupsForSubjects(user);
 
-    if (user.role === UserRole.ADMIN) {
+    if (user.role === UserRole.ADMIN || user.role === UserRole.TEACHER) {
+      // Admin și profesori văd toate grupurile din școală pentru a putea acorda note/absențe
       return this.prisma.subjectGroup.findMany({
         where: { schoolId: user.schoolId },
         include: {

@@ -191,7 +191,7 @@ export const MobileHome: React.FC = () => {
               <strong>{user?.firstName || 'Elev'}!</strong>
             </p>
             <p className="mhome-greeting-sub" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-              Clasa a X-a F • profil mate-info intensiv
+              {user?.class ? `Clasa ${user.class.name}` : 'Fără clasă atribuită'}
             </p>
             {todayClasses.length > 0 && (
               <p className="mhome-greeting-sub">

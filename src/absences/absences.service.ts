@@ -172,7 +172,16 @@ export class AbsencesService {
     },
   ) {
     if (dto.groupId) {
-      await this.access.assertGroupTeacher(user, dto.groupId);
+      // Admin are acces total; profesorii pot înregistra absențe la orice grup din școala lor
+      if (user.role === 'ADMIN') {
+        // verificăm că grupul aparține școlii
+        const grp = await this.prisma.subjectGroup.findFirst({
+          where: { id: dto.groupId, schoolId: user.schoolId },
+        });
+        if (!grp) throw new ForbiddenException('Grupul nu aparține școlii');
+      } else {
+        await this.access.assertGroupTeacher(user, dto.groupId);
+      }
     } else if (user.role !== 'ADMIN') {
       throw new ForbiddenException('Only admin can record absences without a group');
     }

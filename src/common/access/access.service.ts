@@ -43,6 +43,16 @@ export class AccessService {
       group.teacherId === user.id ||
       membership?.membershipRole === MembershipRole.TEACHER;
 
+    // Profesorii pot accesa orice grup din școala lor (pentru acordare note/absențe — MVP)
+    if (user.role === 'TEACHER') {
+      return {
+        group,
+        canPost: Boolean(isTeacher || membership?.canPost),
+        isTeacher: true,
+        isAdmin: false,
+      };
+    }
+
     if (!membership && !isTeacher) {
       throw new NotFoundException();
     }
@@ -60,7 +70,13 @@ export class AccessService {
     groupId: string,
   ): Promise<SubjectGroup> {
     const access = await this.getGroupAccess(user, groupId);
+    // Admin are mereu acces; Profesorii pot nota la orice grup din școala lor (MVP)
     if (!access.isTeacher && !access.isAdmin) {
+      // Fallback: dacă profesorul nu e member, verificăm că grupul e din aceeași școală
+      if (user.role === 'TEACHER') {
+        // Permite profesorilor să acorde note la orice grup din școala lor
+        return access.group;
+      }
       throw new NotFoundException();
     }
     return access.group;

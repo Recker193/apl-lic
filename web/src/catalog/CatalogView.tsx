@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { apiClient } from '../api/client';
 import { 
@@ -261,28 +261,76 @@ export const CatalogView: React.FC = () => {
     grades: GradeEntry[];
   } | null>(null);
 
-  // Calculează datele dinamice per materie/grup
-  const subjectData = groups.map((group) => {
-    const groupGrades = grades.filter((g) => g.group?.id === group.id);
-    const groupAbsences = absences.filter((a) => a.group?.id === group.id);
-    const average = groupGrades.length > 0 
-      ? (groupGrades.reduce((acc, g) => acc + g.value, 0) / groupGrades.length).toFixed(1)
-      : '-';
-    const unexcused = groupAbsences.filter((a) => a.status === 'UNEXCUSED').length;
-    const excused = groupAbsences.filter((a) => a.status === 'EXCUSED').length;
-
-    return {
-      groupId: group.id,
-      name: group.subject?.name || group.name,
-      teacher: group.teacher ? `${group.teacher.lastName || ''} ${group.teacher.firstName || ''}`.trim().toUpperCase() : 'N/A',
-      notes: groupGrades.map((g) => `${g.value} / ${new Date(g.gradedAt).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}`),
-      absences: groupAbsences.map((a) => `${new Date(a.date).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })} .`),
-      media: average,
-      nemotivate: unexcused,
-      motivate: excused,
-      rawGrades: groupGrades,
+  // Calculează datele dinamice per materie/grup — derivat din NOTE și ABSENȚE reale
+  // Funcționează indiferent dacă `groups` e populat sau nu (ex: elev fără GroupMembership)
+  const subjectData = useMemo(() => {
+    type SubjEntry = {
+      groupId: string;
+      name: string;
+      teacher: string;
+      notes: string[];
+      absences: string[];
+      nemotivate: number;
+      motivate: number;
+      rawGrades: GradeEntry[];
+      media: string;
     };
-  });
+
+    const subjMap = new Map<string, SubjEntry>();
+
+    // Construiește map-ul din note
+    grades.forEach((g) => {
+      const key = g.group?.id || '__no_group__';
+      if (!subjMap.has(key)) {
+        const grp = groups.find((x) => x.id === key);
+        const name = grp?.subject?.name || grp?.name || g.group?.name || (g.group as any)?.subject?.name || 'Materie';
+        const teacher = grp?.teacher
+          ? `${grp.teacher.lastName || ''} ${grp.teacher.firstName || ''}`.trim().toUpperCase()
+          : 'N/A';
+        subjMap.set(key, { groupId: key, name, teacher, notes: [], absences: [], nemotivate: 0, motivate: 0, rawGrades: [], media: '-' });
+      }
+      const s = subjMap.get(key)!;
+      s.notes.push(`${g.value} / ${new Date(g.gradedAt).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })}`);
+      s.rawGrades.push(g);
+    });
+
+    // Adaugă absențele
+    absences.forEach((a) => {
+      const key = a.group?.id || '__no_group__';
+      if (!subjMap.has(key)) {
+        const grp = groups.find((x) => x.id === key);
+        const name = grp?.subject?.name || grp?.name || a.group?.name || 'General';
+        const teacher = grp?.teacher
+          ? `${grp.teacher.lastName || ''} ${grp.teacher.firstName || ''}`.trim().toUpperCase()
+          : 'N/A';
+        subjMap.set(key, { groupId: key, name, teacher, notes: [], absences: [], nemotivate: 0, motivate: 0, rawGrades: [], media: '-' });
+      }
+      const s = subjMap.get(key)!;
+      s.absences.push(`${new Date(a.date).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit' })} .`);
+      if (a.status === 'EXCUSED') s.motivate++;
+      else s.nemotivate++;
+    });
+
+    // Dacă există grupuri dar nu există note/absențe din ele, le adăugăm oricum (vizualizare completă)
+    groups.forEach((group) => {
+      if (!subjMap.has(group.id)) {
+        const name = group.subject?.name || group.name;
+        const teacher = group.teacher
+          ? `${group.teacher.lastName || ''} ${group.teacher.firstName || ''}`.trim().toUpperCase()
+          : 'N/A';
+        subjMap.set(group.id, { groupId: group.id, name, teacher, notes: [], absences: [], nemotivate: 0, motivate: 0, rawGrades: [], media: '-' });
+      }
+    });
+
+    // Calculează media finală
+    subjMap.forEach((s) => {
+      if (s.rawGrades.length > 0) {
+        s.media = (s.rawGrades.reduce((acc, g) => acc + g.value, 0) / s.rawGrades.length).toFixed(1);
+      }
+    });
+
+    return Array.from(subjMap.values()).filter((s) => s.groupId !== '__no_group__' || s.rawGrades.length > 0 || s.absences.length > 0);
+  }, [grades, absences, groups]);
 
   const selectedStudentObj = allStudents.find((s) => s.id === selectedStudentFilter);
   const studentDisplayName = user?.role === 'STUDENT'
@@ -758,31 +806,28 @@ export const CatalogView: React.FC = () => {
 
             <form onSubmit={handleCreateGrade} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               <div>
-                <label className="label">Materie / Disciplină</label>
+                <label className="label">Materie / Grup</label>
                 <select
                   className="input"
                   value={targetGroupId}
-                  onChange={(e) => setTargetGroupId(e.target.value)}
+                  onChange={(e) => {
+                    setTargetGroupId(e.target.value);
+                    // Reset student when group changes
+                    setTargetStudentId('');
+                  }}
                   required
                 >
-                  <option value="">Alege materia</option>
-                  {groups.length > 0 ? (
-                    groups.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name}
-                      </option>
-                    ))
-                  ) : (
-                    allSubjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))
-                  )}
+                  <option value="">Alege materia / grupul</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.subject?.name || g.name} {g.class ? `— ${g.class.name}` : ''}
+                    </option>
+                  ))}
                 </select>
-                {groups.length === 0 && allSubjects.length === 0 && (
-                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: 'var(--danger)' }}>
-                    Nu există materii configurate în școală. Adăugați mai întâi o materie din secțiunea Materii.
+                {groups.length === 0 && (
+                  <p style={{ margin: '0.35rem 0 0', fontSize: '0.78rem', color: 'var(--danger)', lineHeight: 1.4 }}>
+                    ⚠️ Nu există grupuri accesibile. Ca profesor, trebuie să fii asignat la un grup.{' '}
+                    Ca administrator, folosiți secțiunea <strong>Materii</strong> pentru a crea grupuri.
                   </p>
                 )}
               </div>
@@ -796,12 +841,27 @@ export const CatalogView: React.FC = () => {
                   required
                 >
                   <option value="">Alege elevul</option>
-                  {allStudents.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.lastName} {s.firstName} ({s.email})
-                    </option>
-                  ))}
+                  {/* Prioritizează membrii grupului selectat, altfel toți elevii */}
+                  {targetGroupId && groupMembers.length > 0
+                    ? groupMembers
+                        .filter((m) => m.membershipRole === 'STUDENT')
+                        .map((m) => (
+                          <option key={m.userId} value={m.userId}>
+                            {m.user.lastName} {m.user.firstName}
+                          </option>
+                        ))
+                    : allStudents.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.lastName} {s.firstName}{s.email ? ` (${s.email})` : ''}
+                        </option>
+                      ))
+                  }
                 </select>
+                {targetGroupId && groupMembers.filter(m => m.membershipRole === 'STUDENT').length === 0 && allStudents.length > 0 && (
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Niciun elev înscris în acest grup — se afișează toți elevii școlii.
+                  </p>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -904,24 +964,22 @@ export const CatalogView: React.FC = () => {
 
             <form onSubmit={handleCreateAbsence} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               <div>
-                <label className="label">Materie / Disciplină</label>
+                <label className="label">Materie / Grup (opțional)</label>
                 <select
                   className="input"
                   value={absenceGroupId}
                   onChange={(e) => setAbsenceGroupId(e.target.value)}
-                  required
                 >
-                  <option value="">Alege materia</option>
-                  {groups.length > 0 ? (
-                    groups.map((g) => (
-                      <option key={g.id} value={g.id}>{g.name}</option>
-                    ))
-                  ) : (
-                    allSubjects.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))
-                  )}
+                  <option value="">— Absență generală (fără materie) —</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.subject?.name || g.name} {g.class ? `— ${g.class.name}` : ''}
+                    </option>
+                  ))}
                 </select>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Lasă gol pentru absență fără materie specifică.
+                </p>
               </div>
 
               <div>

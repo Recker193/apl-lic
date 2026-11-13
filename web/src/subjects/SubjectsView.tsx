@@ -236,7 +236,7 @@ export const SubjectsView: React.FC = () => {
           })}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.25rem' }}>
           {filtered.map((s) => {
             const relevantTeacher =
               s.groups?.find((g) => user?.class?.id && g.classId === user.class.id)?.teacher ||
@@ -281,6 +281,8 @@ export const SubjectsView: React.FC = () => {
                         fontWeight: 700,
                         margin: '0 0 0.25rem 0',
                         wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        overflow: 'visible',
                       }}
                       title={s.name}
                     >
