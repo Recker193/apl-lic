@@ -47,6 +47,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background-color: var(--bg-main);
   color: var(--text-main);
@@ -1567,22 +1573,21 @@ a:hover {
 ═══════════════════════════════════════════════════════════ */
 
 .desktop-sidebar {
-  width: 260px;
-  min-width: 260px;
-  max-width: 260px;
-  height: 100vh;
-  position: sticky;
+  position: fixed;
+  left: 0;
   top: 0;
+  width: 260px;
+  height: 100vh;
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   z-index: 50;
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.04);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.04);
   transition: background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -1686,12 +1691,13 @@ a:hover {
 }
 
 .desktop-main-wrapper {
-  flex: 1;
-  min-width: 0;
+  margin-left: 260px;
+  width: calc(100% - 260px);
   padding: 2rem 2.25rem;
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
 .mhome-desktop-grid {

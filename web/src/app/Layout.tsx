@@ -61,7 +61,7 @@ export const Layout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', maxWidth: '100vw', overflow: 'hidden', backgroundColor: 'var(--bg-main)' }}>
+    <div style={{ position: 'relative', height: '100vh', backgroundColor: 'var(--bg-main)' }}>
       {/* Sidebar cu scrollbar propriu */}
       <aside className="desktop-sidebar">
         {/* Header Sidebar — Logo Caracatiță + Nume aplicație Oktapod */}
