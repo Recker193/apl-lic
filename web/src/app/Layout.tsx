@@ -11,17 +11,12 @@ import {
   User, 
   LogOut, 
   Shield, 
-  Home,
   List,
-  Clock,
-  GraduationCap,
   FileCheck,
-  Compass,
   MessageSquare,
   Sun,
   Moon,
   MessageSquareHeart,
-  BookMarked,
   Newspaper,
 } from 'lucide-react';
 import { FeedbackModal } from '../common/FeedbackModal';
@@ -59,6 +54,22 @@ export const Layout: React.FC = () => {
   }, [user, location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Iconiță PNG cu filter automat în light mode (iconițele sunt dark by default → le albim)
+  const NavIcon = ({ src, alt = '' }: { src: string; alt?: string }) => (
+    <img
+      src={src}
+      alt={alt}
+      style={{
+        width: '20px',
+        height: '20px',
+        objectFit: 'contain',
+        flexShrink: 0,
+        filter: isDarkMode ? 'brightness(0) invert(1) opacity(0.75)' : 'brightness(0) invert(1)',
+      }}
+      onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+    />
+  );
 
   return (
     <div style={{ position: 'relative', height: '100vh', backgroundColor: 'var(--bg-main)' }}>
@@ -133,22 +144,22 @@ export const Layout: React.FC = () => {
             Meniu Principal
           </div>
           <Link to="/" className={`desktop-nav-link ${isActive('/') ? 'desktop-nav-link--active' : ''}`}>
-            <Home size={18} /> <span>Acasă</span>
+            <NavIcon src="/tab-home.png" /> <span>Acasă</span>
           </Link>
           <Link to="/groups" className={`desktop-nav-link ${isActive('/groups') ? 'desktop-nav-link--active' : ''}`}>
-            <BookOpen size={18} /> <span>Materii & Grupuri</span>
+            <NavIcon src="/tab-materii.png" /> <span>Materii & Grupuri</span>
           </Link>
           <Link to="/timetable" className={`desktop-nav-link ${isActive('/timetable') ? 'desktop-nav-link--active' : ''}`}>
-            <Clock size={18} /> <span>Orar Școlar</span>
+            <NavIcon src="/tab-orar.png" /> <span>Orar Școlar</span>
           </Link>
           <Link to="/catalog" className={`desktop-nav-link ${isActive('/catalog') ? 'desktop-nav-link--active' : ''}`}>
-            <GraduationCap size={18} /> <span>Catalog Electronic</span>
+            <NavIcon src="/tab-catalog.png" /> <span>Catalog Electronic</span>
           </Link>
           <Link to="/clubs" className={`desktop-nav-link ${isActive('/clubs') ? 'desktop-nav-link--active' : ''}`}>
-            <Compass size={18} /> <span>Cluburi & Activități</span>
+            <NavIcon src="/tab-cluburi.png" /> <span>Cluburi & Activități</span>
           </Link>
           <Link to="/news" className={`desktop-nav-link ${isActive('/news') ? 'desktop-nav-link--active' : ''}`}>
-            <MessageSquare size={18} /> <span>Noutăți & Social Hub</span>
+            <Newspaper size={18} /> <span>Noutăți & Social Hub</span>
           </Link>
           <Link to="/exams" className={`desktop-nav-link ${isActive('/exams') ? 'desktop-nav-link--active' : ''}`}>
             <FileCheck size={18} /> <span>Teste & Examene</span>
