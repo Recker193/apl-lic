@@ -17,8 +17,9 @@ export class SeedService {
   async seedPlaceholdersForSchool(actor: AuthenticatedUser) {
     const schoolId = actor.schoolId;
     const defaultPasswordHash = await argon2.hash('Placeholder123!');
+    const sid = schoolId.slice(0, 8);
 
-    // 1. Asigurare Trimestru / Modul deschis pentru note și absențe
+    // 1. Asigurare Trimestru / Modul deschis
     const existingTerms = await this.prisma.term.count({ where: { schoolId } });
     if (existingTerms === 0) {
       const now = new Date();
@@ -32,15 +33,14 @@ export class SeedService {
           endsAt: new Date(now.getFullYear() + 1, 5, 30),
         },
       });
-      this.logger.log(`Creat semestru/modul 1 pentru școala ${schoolId}`);
     }
 
     // 2. Clase Placeholder
     const placeholderClassesData = [
-      { name: 'X-A', schoolYear: '2026-2027' },
-      { name: 'X-B', schoolYear: '2026-2027' },
-      { name: 'XI-A', schoolYear: '2026-2027' },
-      { name: 'XII-B', schoolYear: '2026-2027' },
+      { name: '10-E', schoolYear: '2026-2027' },
+      { name: '10-F', schoolYear: '2026-2027' },
+      { name: '11-C', schoolYear: '2026-2027' },
+      { name: '12-A', schoolYear: '2026-2027' },
     ];
 
     const classesMap = new Map<string, string>();
@@ -50,31 +50,31 @@ export class SeedService {
       });
       if (!cls) {
         cls = await this.prisma.schoolClass.create({
-          data: {
-            schoolId,
-            name: c.name,
-            schoolYear: c.schoolYear,
-          },
+          data: { schoolId, name: c.name, schoolYear: c.schoolYear },
         });
       }
       classesMap.set(c.name, cls.id);
     }
 
-    // 3. Profesori Placeholder (nume românești verosimile, email placeholder)
+    // 3. Profesori Placeholder — 12 profesori cu nume românești
     const placeholderTeachersData = [
-      { firstName: 'Costel', lastName: 'Chiteș', email: `costel.chites.placeholder@${schoolId.slice(0, 6)}.lic` },
-      { firstName: 'Irina', lastName: 'Tudorașcu', email: `irina.tudorascu.placeholder@${schoolId.slice(0, 6)}.lic` },
-      { firstName: 'Mirela', lastName: 'Marcu', email: `mirela.marcu.placeholder@${schoolId.slice(0, 6)}.lic` },
-      { firstName: 'Silvia', lastName: 'Măgureanu', email: `silvia.magureanu.placeholder@${schoolId.slice(0, 6)}.lic` },
-      { firstName: 'Dan', lastName: 'Ciupercă', email: `dan.ciuperca.placeholder@${schoolId.slice(0, 6)}.lic` },
-      { firstName: 'Oana-Maria', lastName: 'Lupașcu', email: `oana.lupascu.placeholder@${schoolId.slice(0, 6)}.lic` },
+      { firstName: 'Mihaela',  lastName: 'Dumitrescu',  email: `mihaela.dumitrescu.ph@${sid}.lic` },
+      { firstName: 'Gheorghe', lastName: 'Popescu',      email: `gheorghe.popescu.ph@${sid}.lic` },
+      { firstName: 'Adina',    lastName: 'Florescu',     email: `adina.florescu.ph@${sid}.lic` },
+      { firstName: 'Corneliu', lastName: 'Mărăcineanu',  email: `corneliu.maracineanu.ph@${sid}.lic` },
+      { firstName: 'Ileana',   lastName: 'Ciobanu',      email: `ileana.ciobanu.ph@${sid}.lic` },
+      { firstName: 'Sorin',    lastName: 'Niculescu',    email: `sorin.niculescu.ph@${sid}.lic` },
+      { firstName: 'Daniela',  lastName: 'Voinea',       email: `daniela.voinea.ph@${sid}.lic` },
+      { firstName: 'Marian',   lastName: 'Gheorghiță',   email: `marian.gheorghita.ph@${sid}.lic` },
+      { firstName: 'Luminița', lastName: 'Enache',       email: `luminita.enache.ph@${sid}.lic` },
+      { firstName: 'Octavian', lastName: 'Petrescu',     email: `octavian.petrescu.ph@${sid}.lic` },
+      { firstName: 'Carmen',   lastName: 'Ionescu',      email: `carmen.ionescu.ph@${sid}.lic` },
+      { firstName: 'Vasile',   lastName: 'Moldovan',     email: `vasile.moldovan.ph@${sid}.lic` },
     ];
 
     const teacherIds: string[] = [];
     for (const t of placeholderTeachersData) {
-      let teacher = await this.prisma.user.findUnique({
-        where: { email: t.email },
-      });
+      let teacher = await this.prisma.user.findUnique({ where: { email: t.email } });
       if (!teacher) {
         teacher = await this.prisma.user.create({
           data: {
@@ -92,23 +92,57 @@ export class SeedService {
       teacherIds.push(teacher.id);
     }
 
-    // 4. Elevi Placeholder (nume generate, fără a interfera cu conturile reale)
-    const placeholderStudentsData = [
-      { firstName: 'Andrei', lastName: 'Popa', email: `andrei.popa.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'X-A' },
-      { firstName: 'Maria', lastName: 'Radu', email: `maria.radu.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'X-A' },
-      { firstName: 'Mihai', lastName: 'Dumitrescu', email: `mihai.dumitrescu.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'X-A' },
-      { firstName: 'Elena', lastName: 'Ionescu', email: `elena.ionescu.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'X-A' },
-      { firstName: 'Vlad', lastName: 'Stoica', email: `vlad.stoica.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'X-B' },
-      { firstName: 'Ioana', lastName: 'Constantin', email: `ioana.constantin.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'X-B' },
-      { firstName: 'Alexandru', lastName: 'Stan', email: `alexandru.stan.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'XI-A' },
-      { firstName: 'Diana', lastName: 'Gheorghiu', email: `diana.gheorghiu.demo@${schoolId.slice(0, 6)}.lic`, classKey: 'XII-B' },
+    // 4. Elevi Placeholder — 10 per clasă, 40 total, nume românești diverse
+    const placeholderStudentsData: { firstName: string; lastName: string; email: string; classKey: string }[] = [
+      // 10-E (10 elevi)
+      { firstName: 'Andrei',     lastName: 'Popa',        email: `andrei.popa.s@${sid}.lic`,       classKey: '10-E' },
+      { firstName: 'Raluca',     lastName: 'Stoicescu',   email: `raluca.stoicescu.s@${sid}.lic`,  classKey: '10-E' },
+      { firstName: 'Bogdan',     lastName: 'Radu',        email: `bogdan.radu.s@${sid}.lic`,       classKey: '10-E' },
+      { firstName: 'Teodora',    lastName: 'Manea',       email: `teodora.manea.s@${sid}.lic`,     classKey: '10-E' },
+      { firstName: 'Cristian',   lastName: 'Olteanu',     email: `cristian.olteanu.s@${sid}.lic`,  classKey: '10-E' },
+      { firstName: 'Alina',      lastName: 'Dănilă',      email: `alina.danila.s@${sid}.lic`,      classKey: '10-E' },
+      { firstName: 'Ștefan',     lastName: 'Voicu',       email: `stefan.voicu.s@${sid}.lic`,      classKey: '10-E' },
+      { firstName: 'Larisa',     lastName: 'Chirilă',     email: `larisa.chirila.s@${sid}.lic`,    classKey: '10-E' },
+      { firstName: 'Gabriel',    lastName: 'Tănase',      email: `gabriel.tanase.s@${sid}.lic`,    classKey: '10-E' },
+      { firstName: 'Roxana',     lastName: 'Apostol',     email: `roxana.apostol.s@${sid}.lic`,    classKey: '10-E' },
+      // 10-F (10 elevi)
+      { firstName: 'Vlad',       lastName: 'Constantin',  email: `vlad.constantin.s@${sid}.lic`,   classKey: '10-F' },
+      { firstName: 'Ioana',      lastName: 'Gheorghiu',   email: `ioana.gheorghiu.s@${sid}.lic`,   classKey: '10-F' },
+      { firstName: 'Mihai',      lastName: 'Stănescu',    email: `mihai.stanescu.s@${sid}.lic`,    classKey: '10-F' },
+      { firstName: 'Elena',      lastName: 'Rotaru',      email: `elena.rotaru.s@${sid}.lic`,      classKey: '10-F' },
+      { firstName: 'Alexandru',  lastName: 'Enescu',      email: `alexandru.enescu.s@${sid}.lic`,  classKey: '10-F' },
+      { firstName: 'Diana',      lastName: 'Moraru',      email: `diana.moraru.s@${sid}.lic`,      classKey: '10-F' },
+      { firstName: 'Radu',       lastName: 'Bălan',       email: `radu.balan.s@${sid}.lic`,        classKey: '10-F' },
+      { firstName: 'Georgiana',  lastName: 'Preda',       email: `georgiana.preda.s@${sid}.lic`,   classKey: '10-F' },
+      { firstName: 'Ciprian',    lastName: 'Lupu',        email: `ciprian.lupu.s@${sid}.lic`,      classKey: '10-F' },
+      { firstName: 'Andreea',    lastName: 'Nistor',      email: `andreea.nistor.s@${sid}.lic`,    classKey: '10-F' },
+      // 11-C (10 elevi)
+      { firstName: 'Marius',     lastName: 'Drăghici',    email: `marius.draghici.s@${sid}.lic`,   classKey: '11-C' },
+      { firstName: 'Simona',     lastName: 'Florescu',    email: `simona.florescu.s@${sid}.lic`,   classKey: '11-C' },
+      { firstName: 'Cosmin',     lastName: 'Andrei',      email: `cosmin.andrei.s@${sid}.lic`,     classKey: '11-C' },
+      { firstName: 'Oana',       lastName: 'Dumitrescu',  email: `oana.dumitrescu.s@${sid}.lic`,   classKey: '11-C' },
+      { firstName: 'Ionuț',      lastName: 'Vișan',       email: `ionut.visan.s@${sid}.lic`,       classKey: '11-C' },
+      { firstName: 'Bianca',     lastName: 'Creangă',     email: `bianca.creanga.s@${sid}.lic`,    classKey: '11-C' },
+      { firstName: 'Florin',     lastName: 'Matei',       email: `florin.matei.s@${sid}.lic`,      classKey: '11-C' },
+      { firstName: 'Mihaela',    lastName: 'Rusu',        email: `mihaela.rusu.s@${sid}.lic`,      classKey: '11-C' },
+      { firstName: 'Dragoș',     lastName: 'Iacob',       email: `dragos.iacob.s@${sid}.lic`,      classKey: '11-C' },
+      { firstName: 'Cristina',   lastName: 'Pârvulescu',  email: `cristina.parvulescu.s@${sid}.lic`, classKey: '11-C' },
+      // 12-A (10 elevi)
+      { firstName: 'Sorin',      lastName: 'Avram',       email: `sorin.avram.s@${sid}.lic`,       classKey: '12-A' },
+      { firstName: 'Laura',      lastName: 'Grigorescu',  email: `laura.grigorescu.s@${sid}.lic`,  classKey: '12-A' },
+      { firstName: 'Adrian',     lastName: 'Petrescu',    email: `adrian.petrescu.s@${sid}.lic`,   classKey: '12-A' },
+      { firstName: 'Ramona',     lastName: 'Brânzan',     email: `ramona.branzan.s@${sid}.lic`,    classKey: '12-A' },
+      { firstName: 'Cătălin',    lastName: 'Moise',       email: `catalin.moise.s@${sid}.lic`,     classKey: '12-A' },
+      { firstName: 'Alecia',     lastName: 'Bordea',      email: `alecia.bordea.s@${sid}.lic`,     classKey: '12-A' },
+      { firstName: 'Robert',     lastName: 'Zaharia',     email: `robert.zaharia.s@${sid}.lic`,    classKey: '12-A' },
+      { firstName: 'Nicoleta',   lastName: 'Ciupercă',    email: `nicoleta.ciuperca.s@${sid}.lic`, classKey: '12-A' },
+      { firstName: 'Dănuț',      lastName: 'Olaru',       email: `danut.olaru.s@${sid}.lic`,       classKey: '12-A' },
+      { firstName: 'Isabela',    lastName: 'Toma',        email: `isabela.toma.s@${sid}.lic`,      classKey: '12-A' },
     ];
 
     const studentMap = new Map<string, string>();
     for (const s of placeholderStudentsData) {
-      let student = await this.prisma.user.findUnique({
-        where: { email: s.email },
-      });
+      let student = await this.prisma.user.findUnique({ where: { email: s.email } });
       if (!student) {
         student = await this.prisma.user.create({
           data: {
@@ -125,7 +159,6 @@ export class SeedService {
       }
       studentMap.set(s.email, student.id);
 
-      // Înscrie elevul în clasa respectivă dacă nu e deja înscris
       const classId = classesMap.get(s.classKey);
       if (classId) {
         const hasMembership = await this.prisma.classMembership.findFirst({
@@ -141,140 +174,110 @@ export class SeedService {
 
     // 5. Materii Placeholder
     const placeholderSubjects = [
-      'Matematică',
-      'Fizică',
-      'Chimie',
-      'Informatică',
-      'Limba și literatura română',
-      'Limba engleză',
-      'Istorie',
-      'Biologie',
-      'Geografie',
+      'Matematică', 'Fizică', 'Chimie', 'Informatică',
+      'Limba și literatura română', 'Limba engleză',
+      'Istorie', 'Biologie', 'Geografie',
     ];
 
     const subjectMap = new Map<string, string>();
     for (const subName of placeholderSubjects) {
-      let subj = await this.prisma.subject.findFirst({
-        where: { schoolId, name: subName },
-      });
+      let subj = await this.prisma.subject.findFirst({ where: { schoolId, name: subName } });
       if (!subj) {
-        subj = await this.prisma.subject.create({
-          data: { schoolId, name: subName },
-        });
+        subj = await this.prisma.subject.create({ data: { schoolId, name: subName } });
       }
       subjectMap.set(subName, subj.id);
     }
 
-    // 6. Grupe de studiu (SubjectGroup) & Înrolare elevi în grupuri
-    const primaryClassId = classesMap.get('X-A')!;
+    // 6. Grupe de studiu pentru FIECARE clasă
     const subjectList = Array.from(subjectMap.entries());
+    for (const [classKey, classId] of classesMap.entries()) {
+      for (let i = 0; i < subjectList.length; i++) {
+        const [sName, sId] = subjectList[i];
+        const assignedTeacherId = teacherIds[i % teacherIds.length];
 
-    for (let i = 0; i < subjectList.length; i++) {
-      const [sName, sId] = subjectList[i];
-      const assignedTeacherId = teacherIds[i % teacherIds.length];
-
-      let group = await this.prisma.subjectGroup.findFirst({
-        where: { schoolId, subjectId: sId, classId: primaryClassId },
-      });
-
-      if (!group) {
-        group = await this.prisma.subjectGroup.create({
-          data: {
-            schoolId,
-            subjectId: sId,
-            classId: primaryClassId,
-            teacherId: assignedTeacherId,
-            name: `${sName} - X-A`,
-          },
+        let group = await this.prisma.subjectGroup.findFirst({
+          where: { schoolId, subjectId: sId, classId },
         });
-      }
+        if (!group) {
+          group = await this.prisma.subjectGroup.create({
+            data: {
+              schoolId,
+              subjectId: sId,
+              classId,
+              teacherId: assignedTeacherId,
+              name: `${sName} - ${classKey}`,
+            },
+          });
+        }
 
-      // Înrolare profesor
-      await this.prisma.groupMembership.upsert({
-        where: { groupId_userId: { groupId: group.id, userId: assignedTeacherId } },
-        update: {},
-        create: {
-          groupId: group.id,
-          userId: assignedTeacherId,
-          membershipRole: MembershipRole.TEACHER,
-          canPost: true,
-        },
-      });
-
-      // Înrolare elevi din clasa X-A
-      const classStudents = await this.prisma.classMembership.findMany({
-        where: { classId: primaryClassId },
-      });
-      for (const cs of classStudents) {
+        // Înrolare profesor
         await this.prisma.groupMembership.upsert({
-          where: { groupId_userId: { groupId: group.id, userId: cs.studentId } },
+          where: { groupId_userId: { groupId: group.id, userId: assignedTeacherId } },
           update: {},
-          create: {
-            groupId: group.id,
-            userId: cs.studentId,
-            membershipRole: MembershipRole.STUDENT,
-            canPost: false,
-          },
+          create: { groupId: group.id, userId: assignedTeacherId, membershipRole: MembershipRole.TEACHER, canPost: true },
         });
+
+        // Înrolare elevi din clasă
+        const classStudents = await this.prisma.classMembership.findMany({ where: { classId } });
+        for (const cs of classStudents) {
+          await this.prisma.groupMembership.upsert({
+            where: { groupId_userId: { groupId: group.id, userId: cs.studentId } },
+            update: {},
+            create: { groupId: group.id, userId: cs.studentId, membershipRole: MembershipRole.STUDENT, canPost: false },
+          });
+        }
       }
     }
 
-    // 7. Orar Placeholder complet (Luni - Vineri pentru clasa X-A)
-    const primaryClassObj = await this.prisma.schoolClass.findUnique({
-      where: { id: primaryClassId },
-    });
-    if (primaryClassObj) {
-      const timetableSlots: { day: DayOfWeek; period: number; subject: string; teacherIdx: number; time: [string, string] }[] = [
-        { day: DayOfWeek.MONDAY, period: 1, subject: 'Matematică', teacherIdx: 0, time: ['08:00', '08:50'] },
-        { day: DayOfWeek.MONDAY, period: 2, subject: 'Informatică', teacherIdx: 1, time: ['09:00', '09:50'] },
-        { day: DayOfWeek.MONDAY, period: 3, subject: 'Limba și literatura română', teacherIdx: 2, time: ['10:00', '10:50'] },
-        { day: DayOfWeek.MONDAY, period: 4, subject: 'Fizică', teacherIdx: 3, time: ['11:00', '11:50'] },
-        { day: DayOfWeek.TUESDAY, period: 1, subject: 'Chimie', teacherIdx: 4, time: ['08:00', '08:50'] },
-        { day: DayOfWeek.TUESDAY, period: 2, subject: 'Biologie', teacherIdx: 5, time: ['09:00', '09:50'] },
-        { day: DayOfWeek.TUESDAY, period: 3, subject: 'Matematică', teacherIdx: 0, time: ['10:00', '10:50'] },
-        { day: DayOfWeek.WEDNESDAY, period: 1, subject: 'Limba engleză', teacherIdx: 3, time: ['08:00', '08:50'] },
-        { day: DayOfWeek.WEDNESDAY, period: 2, subject: 'Istorie', teacherIdx: 4, time: ['09:00', '09:50'] },
-        { day: DayOfWeek.WEDNESDAY, period: 3, subject: 'Geografie', teacherIdx: 5, time: ['10:00', '10:50'] },
-        { day: DayOfWeek.THURSDAY, period: 1, subject: 'Fizică', teacherIdx: 3, time: ['08:00', '08:50'] },
-        { day: DayOfWeek.THURSDAY, period: 2, subject: 'Informatică', teacherIdx: 1, time: ['09:00', '09:50'] },
-        { day: DayOfWeek.FRIDAY, period: 1, subject: 'Limba și literatura română', teacherIdx: 2, time: ['08:00', '08:50'] },
-        { day: DayOfWeek.FRIDAY, period: 2, subject: 'Matematică', teacherIdx: 0, time: ['09:00', '09:50'] },
-      ];
+    // 7. Orar Placeholder (clasa 10-E și 10-F)
+    const timetableSlots: { day: DayOfWeek; period: number; subject: string; teacherIdx: number; time: [string, string] }[] = [
+      { day: DayOfWeek.MONDAY,    period: 1, subject: 'Matematică',               teacherIdx: 0, time: ['08:00', '08:50'] },
+      { day: DayOfWeek.MONDAY,    period: 2, subject: 'Informatică',               teacherIdx: 1, time: ['09:00', '09:50'] },
+      { day: DayOfWeek.MONDAY,    period: 3, subject: 'Limba și literatura română', teacherIdx: 2, time: ['10:00', '10:50'] },
+      { day: DayOfWeek.MONDAY,    period: 4, subject: 'Fizică',                   teacherIdx: 3, time: ['11:00', '11:50'] },
+      { day: DayOfWeek.TUESDAY,   period: 1, subject: 'Chimie',                   teacherIdx: 4, time: ['08:00', '08:50'] },
+      { day: DayOfWeek.TUESDAY,   period: 2, subject: 'Biologie',                 teacherIdx: 5, time: ['09:00', '09:50'] },
+      { day: DayOfWeek.TUESDAY,   period: 3, subject: 'Matematică',               teacherIdx: 0, time: ['10:00', '10:50'] },
+      { day: DayOfWeek.WEDNESDAY, period: 1, subject: 'Limba engleză',            teacherIdx: 6, time: ['08:00', '08:50'] },
+      { day: DayOfWeek.WEDNESDAY, period: 2, subject: 'Istorie',                  teacherIdx: 7, time: ['09:00', '09:50'] },
+      { day: DayOfWeek.WEDNESDAY, period: 3, subject: 'Geografie',                teacherIdx: 8, time: ['10:00', '10:50'] },
+      { day: DayOfWeek.THURSDAY,  period: 1, subject: 'Fizică',                   teacherIdx: 3, time: ['08:00', '08:50'] },
+      { day: DayOfWeek.THURSDAY,  period: 2, subject: 'Informatică',               teacherIdx: 1, time: ['09:00', '09:50'] },
+      { day: DayOfWeek.FRIDAY,    period: 1, subject: 'Limba și literatura română', teacherIdx: 2, time: ['08:00', '08:50'] },
+      { day: DayOfWeek.FRIDAY,    period: 2, subject: 'Matematică',               teacherIdx: 0, time: ['09:00', '09:50'] },
+    ];
 
+    for (const targetClass of ['10-E', '10-F']) {
+      const targetClassId = classesMap.get(targetClass);
+      if (!targetClassId) continue;
       for (const slot of timetableSlots) {
         const subjId = subjectMap.get(slot.subject);
         const tId = teacherIds[slot.teacherIdx % teacherIds.length];
-        if (subjId && tId) {
-          const exists = await this.prisma.timetableEntry.findFirst({
-            where: {
-              classId: primaryClassId,
+        if (!subjId || !tId) continue;
+        const exists = await this.prisma.timetableEntry.findFirst({
+          where: { classId: targetClassId, dayOfWeek: slot.day, period: slot.period },
+        });
+        if (!exists) {
+          await this.prisma.timetableEntry.create({
+            data: {
+              schoolId,
+              classId: targetClassId,
+              subjectId: subjId,
+              teacherId: tId,
               dayOfWeek: slot.day,
               period: slot.period,
+              startTime: slot.time[0],
+              endTime: slot.time[1],
+              room: `Sala ${10 + slot.period}`,
             },
           });
-          if (!exists) {
-            await this.prisma.timetableEntry.create({
-              data: {
-                schoolId,
-                classId: primaryClassId,
-                subjectId: subjId,
-                teacherId: tId,
-                dayOfWeek: slot.day,
-                period: slot.period,
-                startTime: slot.time[0],
-                endTime: slot.time[1],
-                room: `Sala ${10 + slot.period}`,
-              },
-            });
-          }
         }
       }
     }
 
     return {
       success: true,
-      message: 'Profiluri placeholder generate cu succes (clase, orar, elevi, profesori, materii). Conturile existente nu au fost atinse.',
+      message: `Generate: 4 clase (10-E, 10-F, 11-C, 12-A), 12 profesori, 40 elevi, 9 materii, orar complet.`,
     };
   }
 }
-

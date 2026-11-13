@@ -279,7 +279,9 @@ export const CatalogView: React.FC = () => {
     // Fallback: dacă groups nu au class, deduce din allStudents cu class
     if (result.length === 0) {
       allStudents.forEach((s) => {
-        const cls = (s as any).class;
+        // API returnează classMemberships[].class (nu class direct)
+        const memberships = (s as any).classMemberships as Array<{ class: { id: string; name: string } }> | undefined;
+        const cls = memberships?.[0]?.class ?? (s as any).class;
         if (cls && !seen.has(cls.id)) {
           seen.add(cls.id);
           result.push({ id: cls.id, name: cls.name });
@@ -315,10 +317,12 @@ export const CatalogView: React.FC = () => {
   const studentsInClass = useMemo(() => {
     if (!selectedClassFilter) return allStudents;
     return allStudents.filter((s) => {
-      const cls = (s as any).class;
-      return cls && (cls.id === selectedClassFilter || cls.name === uniqueClasses.find(c => c.id === selectedClassFilter)?.name);
+      // API returnează classMemberships[].class SAU class direct
+      const memberships = (s as any).classMemberships as Array<{ class: { id: string; name: string } }> | undefined;
+      const cls = memberships?.[0]?.class ?? (s as any).class;
+      return cls && cls.id === selectedClassFilter;
     });
-  }, [allStudents, selectedClassFilter, uniqueClasses]);
+  }, [allStudents, selectedClassFilter]);
 
   // Note/absențe din grupa selectată (pentru view profesor)
   const [teacherViewGrades, setTeacherViewGrades] = useState<GradeEntry[]>([]);
@@ -483,6 +487,88 @@ export const CatalogView: React.FC = () => {
 
     return Array.from(subjMap.values()).filter((s) => s.groupId !== '__no_group__' || s.rawGrades.length > 0 || s.absences.length > 0);
   }, [grades, absences, groups]);
+
+  // ── Pentru PROFESOR/ADMIN: grupează cardurile pe CLASE (10-F, 10-E) ────────
+  const classCardData = useMemo(() => {
+    if (!isTeacherOrAdmin) return [];
+    type ClassEntry = {
+      classId: string;
+      className: string;
+      totalStudents: number;
+      totalGrades: number;
+      totalAbsences: number;
+      unexcused: number;
+      avgGrade: string;
+      groups: Group[];
+    };
+    const classMap = new Map<string, ClassEntry>();
+
+    // Construiește din groups (fiecare group are class)
+    groups.forEach((g) => {
+      const cls = (g as any).class;
+      if (!cls) return;
+      if (!classMap.has(cls.id)) {
+        classMap.set(cls.id, {
+          classId: cls.id,
+          className: cls.name,
+          totalStudents: 0,
+          totalGrades: 0,
+          totalAbsences: 0,
+          unexcused: 0,
+          avgGrade: '—',
+          groups: [],
+        });
+      }
+      classMap.get(cls.id)!.groups.push(g);
+    });
+
+    // Dacă nu există groups cu class, deduce din allStudents
+    if (classMap.size === 0) {
+      allStudents.forEach((s) => {
+        const cls = (s as any).class;
+        if (!cls) return;
+        if (!classMap.has(cls.id)) {
+          classMap.set(cls.id, {
+            classId: cls.id,
+            className: cls.name,
+            totalStudents: 0,
+            totalGrades: 0,
+            totalAbsences: 0,
+            unexcused: 0,
+            avgGrade: '—',
+            groups: [],
+          });
+        }
+      });
+    }
+
+    // Calculează nr. elevi per clasă
+    allStudents.forEach((s) => {
+      // API returnează classMemberships[].class SAU class direct
+      const memberships = (s as any).classMemberships as Array<{ class: { id: string; name: string } }> | undefined;
+      const cls = memberships?.[0]?.class ?? (s as any).class;
+      if (cls && classMap.has(cls.id)) {
+        classMap.get(cls.id)!.totalStudents++;
+      }
+    });
+
+    // Calculează note/absențe din teacherViewGrades/teacherViewAbsences (grupate pe clasă)
+    // Folosim grades/absences pentru carduri (date deja încărcate în selectedGroup context)
+    // Facem o sumă simplă din teacherViewGrades dacă groupId-ul e în grupele clasei
+    classMap.forEach((entry) => {
+      const groupIds = new Set(entry.groups.map((g) => g.id));
+      const classGrades = grades.filter((g) => groupIds.has(g.group?.id || ''));
+      const classAbsences = absences.filter((a) => groupIds.has(a.group?.id || ''));
+      entry.totalGrades = classGrades.length;
+      entry.totalAbsences = classAbsences.length;
+      entry.unexcused = classAbsences.filter((a) => a.status === 'UNEXCUSED').length;
+      if (classGrades.length > 0) {
+        entry.avgGrade = (classGrades.reduce((s, g) => s + g.value, 0) / classGrades.length).toFixed(1);
+      }
+    });
+
+    return Array.from(classMap.values()).sort((a, b) => a.className.localeCompare(b.className));
+  }, [isTeacherOrAdmin, groups, allStudents, grades, absences]);
 
   const selectedStudentObj = allStudents.find((s) => s.id === selectedStudentFilter);
   const studentDisplayName = user?.role === 'STUDENT'
@@ -894,67 +980,105 @@ export const CatalogView: React.FC = () => {
         </button>
       </div>
 
-      {/* Card Grid dinamic pentru materii */}
+      {/* Card Grid — CLASE pentru profesor/admin, MATERII pentru student */}
       <div className="catalog-subjects-grid">
-        {subjectData.length > 0 ? subjectData.map((subj, idx) => (
-          <div 
-            key={idx} 
-            className="catalog-card-container card-interactive"
-            style={{ cursor: 'pointer' }}
-            onClick={() => setSelectedSubjectModal({
-              subjectName: subj.name,
-              teacherName: subj.teacher,
-              grades: subj.rawGrades,
-            })}
-            title="Apasă pentru grafic evoluție și calculator de medii"
-          >
-            <div className="catalog-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 className="catalog-card-subject-name">{subj.name}</h3>
-                <p className="catalog-card-teacher-name">{subj.teacher}</p>
+        {isTeacherOrAdmin ? (
+          // ── Profesor/Admin: carduri pe clase (10-F, 10-E, etc.) ──
+          classCardData.length > 0 ? classCardData.map((cls) => (
+            <div
+              key={cls.classId}
+              className="catalog-card-container card-interactive"
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                // Selectează clasa în tabelul de mai sus și scroll-ează
+                setSelectedClassFilter(cls.classId);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              title={`Deschide clasa ${cls.className} în tabelul de elevi`}
+            >
+              <div className="catalog-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 className="catalog-card-subject-name">{cls.className}</h3>
+                  <p className="catalog-card-teacher-name">{cls.totalStudents} elev{cls.totalStudents !== 1 ? 'i' : ''} înregistra{cls.totalStudents !== 1 ? 'ți' : 't'}</p>
+                </div>
+                <span style={{ fontSize: '0.72rem', backgroundColor: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '9999px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  {cls.groups.length} materii
+                </span>
               </div>
-              <span 
-                style={{ 
-                  fontSize: '0.72rem', 
-                  backgroundColor: 'rgba(255, 255, 255, 0.25)', 
-                  padding: '2px 8px', 
-                  borderRadius: '9999px',
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Grafic &amp; Calculator &gt;
-              </span>
-            </div>
-            <div className="catalog-card-subheaders">
-              <div>Note</div>
-              <div>Absențe</div>
-            </div>
-            <div className="catalog-card-body">
-              <div className="catalog-card-notes-col">
-                {subj.notes.map((n, i) => (
-                  <div key={i}>{n}</div>
-                ))}
+              <div className="catalog-card-subheaders">
+                <div>Note înreg.</div>
+                <div>Absențe</div>
               </div>
-              <div className="catalog-card-absences-col">
-                {subj.absences.map((a, i) => (
-                  <div key={i}>{a}</div>
-                ))}
+              <div className="catalog-card-body">
+                <div className="catalog-card-notes-col">
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>{cls.totalGrades}</div>
+                </div>
+                <div className="catalog-card-absences-col">
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: cls.unexcused > 0 ? 'var(--danger)' : 'var(--text-main)' }}>{cls.totalAbsences}</div>
+                </div>
+              </div>
+              <div className="catalog-card-footer">
+                <span className="catalog-footer-media">Medie clasă: {cls.avgGrade}</span>
+                <div className="catalog-footer-abs-stats">
+                  <span className="catalog-footer-unexcused">Nemotivate: {cls.unexcused}</span>
+                  <span className="catalog-footer-excused">Motivate: {cls.totalAbsences - cls.unexcused}</span>
+                </div>
               </div>
             </div>
-            <div className="catalog-card-footer">
-              <span className="catalog-footer-media">Media: {subj.media}</span>
-              <div className="catalog-footer-abs-stats">
-                <span className="catalog-footer-unexcused">Nemotivate: {subj.nemotivate}</span>
-                <span className="catalog-footer-excused">Motivate: {subj.motivate}</span>
-                <span className="catalog-footer-total">Totale: {subj.nemotivate + subj.motivate}</span>
+          )) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+              Nu există clase înregistrate. Generați date demonstrative din panoul Admin.
+            </div>
+          )
+        ) : (
+          // ── Student: carduri pe materii (comportament original) ──
+          subjectData.length > 0 ? subjectData.map((subj, idx) => (
+            <div
+              key={idx}
+              className="catalog-card-container card-interactive"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedSubjectModal({
+                subjectName: subj.name,
+                teacherName: subj.teacher,
+                grades: subj.rawGrades,
+              })}
+              title="Apasă pentru grafic evoluție și calculator de medii"
+            >
+              <div className="catalog-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 className="catalog-card-subject-name">{subj.name}</h3>
+                  <p className="catalog-card-teacher-name">{subj.teacher}</p>
+                </div>
+                <span style={{ fontSize: '0.72rem', backgroundColor: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '9999px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  Grafic &amp; Calculator &gt;
+                </span>
+              </div>
+              <div className="catalog-card-subheaders">
+                <div>Note</div>
+                <div>Absențe</div>
+              </div>
+              <div className="catalog-card-body">
+                <div className="catalog-card-notes-col">
+                  {subj.notes.map((n, i) => <div key={i}>{n}</div>)}
+                </div>
+                <div className="catalog-card-absences-col">
+                  {subj.absences.map((a, i) => <div key={i}>{a}</div>)}
+                </div>
+              </div>
+              <div className="catalog-card-footer">
+                <span className="catalog-footer-media">Media: {subj.media}</span>
+                <div className="catalog-footer-abs-stats">
+                  <span className="catalog-footer-unexcused">Nemotivate: {subj.nemotivate}</span>
+                  <span className="catalog-footer-excused">Motivate: {subj.motivate}</span>
+                  <span className="catalog-footer-total">Totale: {subj.nemotivate + subj.motivate}</span>
+                </div>
               </div>
             </div>
-          </div>
-        )) : (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-            Nu există materii înregistrate. Profesorii vor adăuga materii și note în curând.
-          </div>
+          )) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+              Nu există materii înregistrate. Profesorii vor adăuga materii și note în curând.
+            </div>
+          )
         )}
       </div>
 
