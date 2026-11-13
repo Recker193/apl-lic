@@ -80,6 +80,10 @@ export class UsersService {
     }
 
     await this.prisma.$transaction(async (tx) => {
+      // 0. GradeRevision PRIMUL - onDelete: Restrict pe actorId blocheaza user.delete()
+      await tx.gradeRevision.deleteMany({ where: { actorId: id } });
+      await tx.gradeRevision.deleteMany({ where: { grade: { studentId: id } } });
+
       // 1. Sesiuni și token-uri de autentificare
       await tx.session.deleteMany({ where: { userId: id } });
       await tx.emailToken.deleteMany({ where: { userId: id } });
@@ -95,14 +99,6 @@ export class UsersService {
       await tx.assignmentProgress.deleteMany({ where: { studentId: id } });
 
       // 4. Date școlare asociate elevului (note, absențe, medii, purtare)
-      await tx.gradeRevision.deleteMany({
-        where: {
-          OR: [
-            { grade: { studentId: id } },
-            { actorId: id },
-          ],
-        },
-      });
       await tx.gradeEntry.deleteMany({ where: { studentId: id } });
       await tx.absence.deleteMany({ where: { studentId: id } });
       await tx.conductGrade.deleteMany({ where: { studentId: id } });

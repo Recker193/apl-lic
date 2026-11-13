@@ -73,6 +73,23 @@ export const CatalogView: React.FC = () => {
 
   const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
+  // ── Profesor view: selector clasă ──────────────────────────────────────────
+  // "Clasă" = un grup unic de tip clasă (dedus din groups: grupele cu același class)
+  // Păstrăm: selectedClassFilter (className string) + selectedSubjectGroupId
+  const [selectedClassFilter, setSelectedClassFilter] = useState<string>('');
+  const [selectedSubjectGroupId, setSelectedSubjectGroupId] = useState<string>('');
+  // Note rapide per elev (mini-modal inline)
+  const [quickGradeStudent, setQuickGradeStudent] = useState<{ id: string; name: string } | null>(null);
+  const [quickGradeGroupId, setQuickGradeGroupId] = useState<string>('');
+  const [quickGradeValue, setQuickGradeValue] = useState<number>(10);
+  const [quickGradeType, setQuickGradeType] = useState<string>('TEST');
+  const [quickGradeComment, setQuickGradeComment] = useState<string>('');
+  const [quickGradeBusy, setQuickGradeBusy] = useState(false);
+  // Absență rapidă
+  const [quickAbsStudent, setQuickAbsStudent] = useState<{ id: string; name: string } | null>(null);
+  const [quickAbsDate, setQuickAbsDate] = useState(new Date().toISOString().split('T')[0]);
+  const [quickAbsBusy, setQuickAbsBusy] = useState(false);
+
   useEffect(() => {
     if (showAddGrade || showAddAbsence) {
       document.body.style.overflow = 'hidden';
@@ -247,6 +264,141 @@ export const CatalogView: React.FC = () => {
     window.print();
   };
 
+  // ── Profesor view: clase unice din groups ──────────────────────────────────
+  // Fiecare group are `class` (clasa asociată) — extragem clasele unice
+  const uniqueClasses = useMemo(() => {
+    const seen = new Set<string>();
+    const result: { id: string; name: string }[] = [];
+    groups.forEach((g) => {
+      const cls = (g as any).class;
+      if (cls && !seen.has(cls.id)) {
+        seen.add(cls.id);
+        result.push({ id: cls.id, name: cls.name });
+      }
+    });
+    // Fallback: dacă groups nu au class, deduce din allStudents cu class
+    if (result.length === 0) {
+      allStudents.forEach((s) => {
+        const cls = (s as any).class;
+        if (cls && !seen.has(cls.id)) {
+          seen.add(cls.id);
+          result.push({ id: cls.id, name: cls.name });
+        }
+      });
+    }
+    return result.sort((a, b) => a.name.localeCompare(b.name));
+  }, [groups, allStudents]);
+
+  // Auto-selectează prima clasă disponibilă
+  useEffect(() => {
+    if (uniqueClasses.length > 0 && !selectedClassFilter) {
+      setSelectedClassFilter(uniqueClasses[0].id);
+    }
+  }, [uniqueClasses]);
+
+  // Grupele din clasa selectată (pentru selector materie)
+  const groupsInClass = useMemo(() => {
+    if (!selectedClassFilter) return groups;
+    return groups.filter((g) => (g as any).class?.id === selectedClassFilter || (g as any).classId === selectedClassFilter);
+  }, [groups, selectedClassFilter]);
+
+  // Auto-selectează prima grupă din clasă
+  useEffect(() => {
+    if (groupsInClass.length > 0) {
+      setSelectedSubjectGroupId(groupsInClass[0].id);
+    } else {
+      setSelectedSubjectGroupId('');
+    }
+  }, [groupsInClass]);
+
+  // Elevii din clasa selectată
+  const studentsInClass = useMemo(() => {
+    if (!selectedClassFilter) return allStudents;
+    return allStudents.filter((s) => {
+      const cls = (s as any).class;
+      return cls && (cls.id === selectedClassFilter || cls.name === uniqueClasses.find(c => c.id === selectedClassFilter)?.name);
+    });
+  }, [allStudents, selectedClassFilter, uniqueClasses]);
+
+  // Note/absențe din grupa selectată (pentru view profesor)
+  const [teacherViewGrades, setTeacherViewGrades] = useState<GradeEntry[]>([]);
+  const [teacherViewAbsences, setTeacherViewAbsences] = useState<AbsenceEntry[]>([]);
+  const [teacherViewLoading, setTeacherViewLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isTeacherOrAdmin || !selectedSubjectGroupId) return;
+    const load = async () => {
+      setTeacherViewLoading(true);
+      try {
+        const q = selectedTermId ? `?termId=${selectedTermId}` : '';
+        const [grd, abs] = await Promise.all([
+          apiClient<GradeEntry[]>(`/api/v1/groups/${selectedSubjectGroupId}/grades${q}`).catch(() => []),
+          apiClient<AbsenceEntry[]>(`/api/v1/groups/${selectedSubjectGroupId}/absences${q}`).catch(() => []),
+        ]);
+        setTeacherViewGrades(grd);
+        setTeacherViewAbsences(abs);
+      } finally {
+        setTeacherViewLoading(false);
+      }
+    };
+    load();
+  }, [selectedSubjectGroupId, selectedTermId, isTeacherOrAdmin]);
+
+  // Handler notă rapidă per elev
+  const handleQuickGrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickGradeStudent || !quickGradeGroupId) return;
+    setQuickGradeBusy(true);
+    try {
+      await apiClient(`/api/v1/groups/${quickGradeGroupId}/grades`, {
+        method: 'POST',
+        body: JSON.stringify({
+          studentId: quickGradeStudent.id,
+          value: Number(quickGradeValue),
+          type: quickGradeType,
+          comment: quickGradeComment || undefined,
+          gradedAt: new Date().toISOString(),
+        }),
+      });
+      setQuickGradeStudent(null);
+      setQuickGradeComment('');
+      setQuickGradeValue(10);
+      // Reîncarcă notele view profesor
+      const q = selectedTermId ? `?termId=${selectedTermId}` : '';
+      const grd = await apiClient<GradeEntry[]>(`/api/v1/groups/${quickGradeGroupId}/grades${q}`).catch(() => []);
+      setTeacherViewGrades(grd);
+    } catch (err: any) {
+      alert(err.message || 'Eroare la adăugarea notei');
+    } finally {
+      setQuickGradeBusy(false);
+    }
+  };
+
+  // Handler absență rapidă per elev
+  const handleQuickAbsence = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickAbsStudent) return;
+    setQuickAbsBusy(true);
+    try {
+      await apiClient('/api/v1/absences', {
+        method: 'POST',
+        body: JSON.stringify({
+          studentId: quickAbsStudent.id,
+          groupId: selectedSubjectGroupId || undefined,
+          date: new Date(quickAbsDate).toISOString(),
+        }),
+      });
+      setQuickAbsStudent(null);
+      const q = selectedTermId ? `?termId=${selectedTermId}` : '';
+      const abs = await apiClient<AbsenceEntry[]>(`/api/v1/groups/${selectedSubjectGroupId}/absences${q}`).catch(() => []);
+      setTeacherViewAbsences(abs);
+    } catch (err: any) {
+      alert(err.message || 'Eroare la înregistrarea absenței');
+    } finally {
+      setQuickAbsBusy(false);
+    }
+  };
+
   // Calcule statistice
   const averageGrade = grades.length > 0 
     ? (grades.reduce((acc, curr) => acc + curr.value, 0) / grades.length).toFixed(2)
@@ -343,6 +495,342 @@ export const CatalogView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+      {/* ═══════════════════════════════════════════════════════════
+          PANOU PROFESOR / ADMIN — Vizualizare elevi pe clase
+      ════════════════════════════════════════════════════════════ */}
+      {isTeacherOrAdmin && (
+        <div style={{
+          background: 'var(--bg-card)',
+          borderRadius: '16px',
+          border: '1px solid var(--border)',
+          overflow: 'hidden',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+        }}>
+          {/* Header panou profesor */}
+          <div style={{
+            padding: '1.25rem 1.5rem',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            alignItems: 'center',
+            backgroundColor: 'var(--bg-subtle, rgba(37,99,235,0.04))',
+          }}>
+            <GraduationCap size={20} color="var(--primary)" />
+            <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>
+              Catalog Electronic — Vizualizare Elevi
+            </span>
+
+            {/* Selector Trimestru */}
+            <select
+              className="input"
+              style={{ width: 'auto', minWidth: '130px', marginLeft: 'auto' }}
+              value={selectedTermId}
+              onChange={(e) => setSelectedTermId(e.target.value)}
+            >
+              {terms.map((t) => (
+                <option key={t.id} value={t.id}>
+                  Modulul {t.number} ({t.status === 'OPEN' ? 'Activ' : 'Închis'})
+                </option>
+              ))}
+            </select>
+
+            {/* Selector Clasă */}
+            <select
+              className="input"
+              style={{ width: 'auto', minWidth: '120px' }}
+              value={selectedClassFilter}
+              onChange={(e) => setSelectedClassFilter(e.target.value)}
+            >
+              {uniqueClasses.length === 0 && (
+                <option value="">— Toate clasele —</option>
+              )}
+              {uniqueClasses.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+
+            {/* Selector Materie/Grup */}
+            <select
+              className="input"
+              style={{ width: 'auto', minWidth: '160px' }}
+              value={selectedSubjectGroupId}
+              onChange={(e) => setSelectedSubjectGroupId(e.target.value)}
+            >
+              {groupsInClass.length === 0 && (
+                <option value="">— Nicio materie —</option>
+              )}
+              {groupsInClass.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {(g as any).subject?.name || g.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tabel elevi */}
+          <div style={{ overflowX: 'auto' }}>
+            {teacherViewLoading ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                Se încarcă...
+              </div>
+            ) : studentsInClass.length === 0 ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                Nu există elevi înregistrați în această clasă.
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: 'var(--bg-subtle)', borderBottom: '2px solid var(--border)' }}>
+                    <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                      #
+                    </th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Elev
+                    </th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Note
+                    </th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                      Medie
+                    </th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                      Abs.
+                    </th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Acțiuni
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentsInClass.map((student, idx) => {
+                    const stuGrades = teacherViewGrades.filter((g) => g.studentId === student.id);
+                    const stuAbsences = teacherViewAbsences.filter((a) => a.studentId === student.id);
+                    const avg = stuGrades.length > 0
+                      ? (stuGrades.reduce((s, g) => s + g.value, 0) / stuGrades.length).toFixed(2)
+                      : '—';
+                    const unexcused = stuAbsences.filter((a) => a.status === 'UNEXCUSED').length;
+                    const studentName = `${student.lastName || ''} ${student.firstName || ''}`.trim() || student.email;
+
+                    return (
+                      <tr
+                        key={student.id}
+                        style={{
+                          borderBottom: '1px solid var(--border)',
+                          transition: 'background-color 0.15s',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '')}
+                      >
+                        {/* Nr. crt */}
+                        <td style={{ padding: '0.65rem 1.25rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>
+                          {idx + 1}
+                        </td>
+
+                        {/* Nume elev */}
+                        <td style={{ padding: '0.65rem 1rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                          {studentName}
+                          {student.email && (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                              {student.email}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Note inline */}
+                        <td style={{ padding: '0.65rem 1rem', maxWidth: '300px' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', alignItems: 'center' }}>
+                            {stuGrades.length === 0 ? (
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>—</span>
+                            ) : (
+                              stuGrades.map((g) => (
+                                <span
+                                  key={g.id}
+                                  title={`${g.type}${g.comment ? ' — ' + g.comment : ''}`}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minWidth: '28px',
+                                    height: '28px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 700,
+                                    padding: '0 6px',
+                                    backgroundColor: g.value >= 5
+                                      ? 'rgba(34,197,94,0.15)'
+                                      : 'rgba(239,68,68,0.15)',
+                                    color: g.value >= 5 ? '#16a34a' : '#dc2626',
+                                    border: `1px solid ${g.value >= 5 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                                    cursor: 'default',
+                                  }}
+                                >
+                                  {g.value}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Medie */}
+                        <td style={{ padding: '0.65rem 1rem', textAlign: 'center' }}>
+                          <span style={{
+                            fontWeight: 700,
+                            fontSize: '0.95rem',
+                            color: avg === '—' ? 'var(--text-muted)' : Number(avg) >= 5 ? 'var(--success, #16a34a)' : 'var(--danger)',
+                          }}>
+                            {avg}
+                          </span>
+                        </td>
+
+                        {/* Absențe */}
+                        <td style={{ padding: '0.65rem 1rem', textAlign: 'center' }}>
+                          {stuAbsences.length === 0 ? (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>0</span>
+                          ) : (
+                            <span style={{
+                              fontWeight: 700,
+                              fontSize: '0.85rem',
+                              color: unexcused > 0 ? 'var(--danger)' : 'var(--text-muted)',
+                            }}>
+                              {stuAbsences.length}
+                              {unexcused > 0 && (
+                                <span style={{ fontSize: '0.72rem', color: 'var(--danger)', marginLeft: '3px' }}>
+                                  ({unexcused} nem.)
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Acțiuni */}
+                        <td style={{ padding: '0.65rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button
+                            className="btn btn-primary"
+                            style={{ padding: '0.3rem 0.65rem', fontSize: '0.78rem', gap: '0.3rem' }}
+                            title="Adaugă notă"
+                            onClick={() => {
+                              setQuickGradeStudent({ id: student.id, name: studentName });
+                              setQuickGradeGroupId(selectedSubjectGroupId);
+                              setQuickGradeValue(10);
+                              setQuickGradeType('TEST');
+                              setQuickGradeComment('');
+                            }}
+                          >
+                            <Plus size={14} /> Notă
+                          </button>
+                          <button
+                            className="btn btn-outline"
+                            style={{ padding: '0.3rem 0.65rem', fontSize: '0.78rem', gap: '0.3rem', marginLeft: '0.4rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}
+                            title="Adaugă absență"
+                            onClick={() => {
+                              setQuickAbsStudent({ id: student.id, name: studentName });
+                              setQuickAbsDate(new Date().toISOString().split('T')[0]);
+                            }}
+                          >
+                            <Plus size={14} /> Abs.
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal rapid Adaugă Notă per elev */}
+      {quickGradeStudent && (
+        <ModalPortal>
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '1.75rem', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Adaugă Notă</h3>
+              <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Elev: <strong>{quickGradeStudent.name}</strong>
+              </p>
+              <form onSubmit={handleQuickGrade} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Nota (1–10)</label>
+                    <input
+                      type="number" min={1} max={10} className="input"
+                      value={quickGradeValue}
+                      onChange={(e) => setQuickGradeValue(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Tip</label>
+                    <select className="input" value={quickGradeType} onChange={(e) => setQuickGradeType(e.target.value)}>
+                      <option value="TEST">Test</option>
+                      <option value="ORAL">Oral</option>
+                      <option value="HOMEWORK">Temă</option>
+                      <option value="PROJECT">Proiect</option>
+                      <option value="PARTIAL">Teză</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Observație (opțional)</label>
+                  <input
+                    type="text" className="input" placeholder="ex: Teză sem. 1"
+                    value={quickGradeComment}
+                    onChange={(e) => setQuickGradeComment(e.target.value)}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                  <button type="button" className="btn btn-outline" onClick={() => setQuickGradeStudent(null)} disabled={quickGradeBusy}>
+                    Anulează
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={quickGradeBusy}>
+                    {quickGradeBusy ? 'Se salvează...' : 'Salvează nota'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Modal rapid Adaugă Absență per elev */}
+      {quickAbsStudent && (
+        <ModalPortal>
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '1.75rem', width: '100%', maxWidth: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Înregistrează Absență</h3>
+              <p style={{ margin: '0 0 1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Elev: <strong>{quickAbsStudent.name}</strong>
+              </p>
+              <form onSubmit={handleQuickAbsence} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.3rem' }}>Data absenței</label>
+                  <input
+                    type="date" className="input"
+                    value={quickAbsDate}
+                    onChange={(e) => setQuickAbsDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                  <button type="button" className="btn btn-outline" onClick={() => setQuickAbsStudent(null)} disabled={quickAbsBusy}>
+                    Anulează
+                  </button>
+                  <button type="submit" className="btn btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }} disabled={quickAbsBusy}>
+                    {quickAbsBusy ? 'Se salvează...' : 'Înregistrează'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          VIEW EXISTENT (elev / sumar per materie)
+      ══════════════════════════════════════════════ */}
       {/* Header oficial Catalog */}
       <div className="catalog-vianu-header-row">
         <div>

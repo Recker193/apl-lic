@@ -1615,7 +1615,7 @@ a:hover {
   border-radius: 10px;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   font-weight: 500;
   transition: background-color 0.18s ease, color 0.18s ease;
   position: relative;

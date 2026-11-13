@@ -4,13 +4,13 @@ import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../common/ThemeContext';
 import { AccentColorPicker } from '../common/AccentColorPicker';
 import { apiClient } from '../api/client';
-import { 
-  BookOpen, 
-  Calendar, 
-  Bell, 
-  User, 
-  LogOut, 
-  Shield, 
+import {
+  BookOpen,
+  Calendar,
+  Bell,
+  User,
+  LogOut,
+  Shield,
   List,
   FileCheck,
   MessageSquare,
@@ -55,7 +55,7 @@ export const Layout: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Iconiță PNG cu filter automat în light mode (iconițele sunt dark by default → le albim)
+  // Iconiță PNG: light mode → culori naturale (dark pe fundal deschis); dark mode → albe
   const NavIcon = ({ src, alt = '' }: { src: string; alt?: string }) => (
     <img
       src={src}
@@ -65,7 +65,7 @@ export const Layout: React.FC = () => {
         height: '20px',
         objectFit: 'contain',
         flexShrink: 0,
-        filter: isDarkMode ? 'brightness(0) invert(1) opacity(0.75)' : 'brightness(0) invert(1)',
+        filter: isDarkMode ? 'brightness(0) invert(1) opacity(0.8)' : 'opacity(0.65)',
       }}
       onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
     />
@@ -128,13 +128,13 @@ export const Layout: React.FC = () => {
         </div>
 
         {/* Scrollable Navigation Bar (Independent scroll) */}
-        <nav 
+        <nav
           className="custom-scrollbar"
-          style={{ 
-            padding: '0.75rem 0.75rem', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '0.2rem', 
+          style={{
+            padding: '0.75rem 0.75rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.2rem',
             flex: 1,
             overflowY: 'auto',
             overflowX: 'hidden',
@@ -232,30 +232,30 @@ export const Layout: React.FC = () => {
           >
             <MessageSquareHeart size={16} /> <span>Trimite Feedback</span>
           </button>
-           
-           {/* Buton Dark Mode Toggle */}
-           <button
-             onClick={toggleDarkMode}
-             className="btn btn-outline"
-             style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.85rem' }}
-             title="Schimbă tema de culori"
-           >
-             <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-               {isDarkMode ? <Moon size={16} color="var(--warning)" /> : <Sun size={16} color="var(--warning)" />}
-               <span>{isDarkMode ? 'Mod Întunecat' : 'Mod Luminos'}</span>
-             </span>
-             <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-               {isDarkMode ? 'ON' : 'OFF'}
-             </span>
-           </button>
-           
-           <button 
-             onClick={logout} 
-             className="btn btn-outline" 
-             style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)' }}
-           >
-             <LogOut size={16} /> <span>Deconectare</span>
-           </button>
+
+          {/* Buton Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="btn btn-outline"
+            style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.85rem' }}
+            title="Schimbă tema de culori"
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {isDarkMode ? <Moon size={16} color="var(--warning)" /> : <Sun size={16} color="var(--warning)" />}
+              <span>{isDarkMode ? 'Mod Întunecat' : 'Mod Luminos'}</span>
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              {isDarkMode ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          <button
+            onClick={logout}
+            className="btn btn-outline"
+            style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)' }}
+          >
+            <LogOut size={16} /> <span>Deconectare</span>
+          </button>
         </div>
       </aside>
 
