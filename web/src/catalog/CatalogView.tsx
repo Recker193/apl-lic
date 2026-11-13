@@ -410,7 +410,6 @@ export const CatalogView: React.FC = () => {
   const unexcusedCount = absences.filter((a) => a.status === 'UNEXCUSED').length;
   const excusedCount = absences.filter((a) => a.status === 'EXCUSED').length;
 
-  const [activeCatalogTab, setActiveCatalogTab] = useState<'note' | 'sumar' | 'observatii' | 'mesagerie' | 'motivari'>('note');
   const [selectedSubjectModal, setSelectedSubjectModal] = useState<{
     subjectName: string;
     teacherName: string;
@@ -589,9 +588,7 @@ export const CatalogView: React.FC = () => {
         <div style={{
           background: 'var(--bg-card)',
           borderRadius: '16px',
-          border: '1px solid var(--border)',
           overflow: 'hidden',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         }}>
           {/* Header panou profesor */}
           <div style={{
@@ -941,44 +938,7 @@ export const CatalogView: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Catalog */}
-      <div className="catalog-tabs-bar">
-        <button 
-          type="button" 
-          className={`catalog-tab-item ${activeCatalogTab === 'note' ? 'active' : ''}`}
-          onClick={() => setActiveCatalogTab('note')}
-        >
-          Note
-        </button>
-        <button 
-          type="button" 
-          className={`catalog-tab-item ${activeCatalogTab === 'sumar' ? 'active' : ''}`}
-          onClick={() => setActiveCatalogTab('sumar')}
-        >
-          Sumar
-        </button>
-        <button 
-          type="button" 
-          className={`catalog-tab-item ${activeCatalogTab === 'observatii' ? 'active' : ''}`}
-          onClick={() => setActiveCatalogTab('observatii')}
-        >
-          Observații
-        </button>
-        <button 
-          type="button" 
-          className={`catalog-tab-item ${activeCatalogTab === 'mesagerie' ? 'active' : ''}`}
-          onClick={() => setActiveCatalogTab('mesagerie')}
-        >
-          Mesagerie
-        </button>
-        <button 
-          type="button" 
-          className={`catalog-tab-item ${activeCatalogTab === 'motivari' ? 'active' : ''}`}
-          onClick={() => setActiveCatalogTab('motivari')}
-        >
-          Motivări
-        </button>
-      </div>
+
 
       {/* Card Grid — CLASE pentru profesor/admin, MATERII pentru student */}
       <div className="catalog-subjects-grid">

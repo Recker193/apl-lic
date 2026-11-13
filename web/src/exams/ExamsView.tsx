@@ -33,9 +33,18 @@ export const ExamsView: React.FC = () => {
         setSelectedGroupId(groupsList[0].id);
       }
 
-      // Fetch exams from calendar or groups
-      const calData = await apiClient<{ exams: Exam[] }>('/api/v1/calendar').catch(() => ({ exams: [] }));
-      setExams(calData.exams || []);
+      // Fetch exams from each group and aggregate
+      const examArrays = await Promise.all(
+        groupsList.map((g) =>
+          apiClient<Exam[]>(`/api/v1/groups/${g.id}/exams`).catch(() => [] as Exam[])
+        )
+      );
+      // Deduplicate by exam id
+      const examMap = new Map<string, Exam>();
+      examArrays.flat().forEach((ex) => examMap.set(ex.id, ex));
+      setExams(Array.from(examMap.values()).sort(
+        (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+      ));
     } catch (err) {
       console.error('Error loading exams', err);
     } finally {

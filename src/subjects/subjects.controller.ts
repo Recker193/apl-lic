@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -58,5 +58,19 @@ export class SubjectsController {
     return this.prisma.subject.create({
       data: { name: dto.name, schoolId: user.schoolId },
     });
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  async delete(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const subject = await this.prisma.subject.findFirst({
+      where: { id, schoolId: user.schoolId },
+    });
+    if (!subject) throw new NotFoundException('Materia nu a fost găsită');
+    await this.prisma.subject.delete({ where: { id } });
+    return { success: true };
   }
 }

@@ -3,7 +3,7 @@ import { apiClient } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Subject } from '../api/types';
 import { AssetIcon } from '../common/AssetIcon';
-import { BookOpen, Plus, Search, BookMarked, UserCheck } from 'lucide-react';
+import { BookOpen, Plus, Search, BookMarked, UserCheck, Trash2 } from 'lucide-react';
 import { useMobile } from '../common/useMobile';
 import { SendMessageModal } from '../common/SendMessageModal';
 import { ModalPortal } from '../common/ModalPortal';
@@ -113,6 +113,16 @@ export const SubjectsView: React.FC = () => {
       alert(err.message || 'Eroare la actualizarea profesorului');
     } finally {
       setUpdatingTeacher(false);
+    }
+  };
+
+  const handleDeleteSubject = async (subjectId: string, subjectName: string) => {
+    if (!window.confirm(`Sigur doriți să ștergeți materia "${subjectName}"? Această acțiune este ireversibilă.`)) return;
+    try {
+      await apiClient(`/api/v1/subjects/${subjectId}`, { method: 'DELETE' });
+      fetchSubjects();
+    } catch (err: any) {
+      alert(err.message || 'Eroare la ștergerea materiei');
     }
   };
 
@@ -349,6 +359,28 @@ export const SubjectsView: React.FC = () => {
                     <img src="/action-chat.png" alt="Mesaj" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
                     <span>Mesaj</span>
                   </button>
+
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      style={{
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        backgroundColor: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                      }}
+                      title={`Șterge materia ${s.name}`}
+                      onClick={() => handleDeleteSubject(s.id, s.name)}
+                    >
+                      <Trash2 size={15} />
+                      <span>Șterge</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

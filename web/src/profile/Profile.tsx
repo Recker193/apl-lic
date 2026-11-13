@@ -106,7 +106,7 @@ export const Profile: React.FC = () => {
             marginBottom: '1rem',
           }}
         >
-          <img src="/btn-settings-gear.png" alt="" style={{ height: '16px', objectFit: 'contain' }} onError={(e) => (e.currentTarget.style.display = 'none')} />
+          <Settings size={16} />
           <span>Setări</span>
         </button>
 
