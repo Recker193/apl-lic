@@ -101,15 +101,6 @@ export const Layout: React.FC = () => {
                 {schoolName || 'Platformă Școlară'}
               </div>
             </div>
-            <button
-              onClick={() => setShowFeedbackModal(true)}
-              className="mobile-icon-btn"
-              aria-label="Setări"
-              title="Setări"
-              style={{ marginLeft: 'auto' }}
-            >
-              <Settings size={20} />
-            </button>
           </div>
 
           {user && (
