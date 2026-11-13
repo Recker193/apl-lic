@@ -1567,21 +1567,23 @@ a:hover {
 ═══════════════════════════════════════════════════════════ */
 
 .desktop-sidebar {
-  width: 275px;
-  min-width: 275px;
+  width: 260px;
+  min-width: 260px;
+  max-width: 260px;
   height: 100vh;
   position: sticky;
   top: 0;
-  background-color: rgba(255, 255, 255, 0.82);
+  background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  overflow: hidden;
   z-index: 50;
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.02);
-  transition: all 0.25s ease;
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.04);
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 [data-theme='dark'] .desktop-sidebar {
@@ -1603,20 +1605,33 @@ a:hover {
 .desktop-nav-link {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.7rem 0.95rem;
-  border-radius: 12px;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.18s ease, color 0.18s ease;
   position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.desktop-nav-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.desktop-nav-link svg,
+.desktop-nav-link img {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
 }
 .desktop-nav-link:hover {
   background-color: var(--bg-hover);
   color: var(--text-main);
-  transform: translateX(4px);
   text-decoration: none;
 }
 .desktop-nav-link--active {
@@ -1672,8 +1687,10 @@ a:hover {
 
 .desktop-main-wrapper {
   flex: 1;
-  padding: 2.25rem;
+  min-width: 0;
+  padding: 2rem 2.25rem;
   overflow-y: auto;
+  overflow-x: hidden;
   max-height: 100vh;
 }
 
